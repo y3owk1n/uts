@@ -158,10 +158,17 @@ For a complete reference, check out the [CLI Guide](docs/CLI.md).
 
 ---
 
+### Color Customization
+
+`uts` supports full color palette customization via environment variables. See the [Configuration Guide](docs/CONFIGURATION.md) for details.
+
+---
+
 ### Documentation & Contributions
 
 - **[Installation](docs/INSTALLATION.md)** – Detailed setup for all platforms.
 - **[CLI Reference](docs/CLI.md)** – Every command, flag, and exit code explained.
+- **[Configuration](docs/CONFIGURATION.md)** – Color customization and environment variables.
 - **[Development](docs/DEVELOPMENT.md)** – Build tasks, testing, and release process.
 - **[Contributing](CONTRIBUTING.md)** – Code of conduct, commit guidelines, and pull request workflow.
 
