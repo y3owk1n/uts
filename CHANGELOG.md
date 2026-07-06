@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/y3owk1n/uts/compare/v0.1.2...v0.1.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **archive:** remove auto and default to zip ([#10](https://github.com/y3owk1n/uts/issues/10)) ([27b39e2](https://github.com/y3owk1n/uts/commit/27b39e21557f2a7485d6bdf60c9bb459f0a4a653))
+
 ## [0.1.2](https://github.com/y3owk1n/uts/compare/v0.1.1...v0.1.2) (2026-07-06)
 
 
