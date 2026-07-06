@@ -1,6 +1,6 @@
 package style
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 // KeyColumnWidth is the default width for key columns.
 const KeyColumnWidth = 14

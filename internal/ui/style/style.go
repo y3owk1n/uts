@@ -4,20 +4,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
+	"github.com/charmbracelet/colorprofile"
 )
 
 // Palette defines the color palette for the CLI.
 type Palette struct {
-	Primary lipgloss.AdaptiveColor
-	Text    lipgloss.AdaptiveColor
-	Muted   lipgloss.AdaptiveColor
-	Subtle  lipgloss.AdaptiveColor
-	Border  lipgloss.AdaptiveColor
-	Accent  lipgloss.AdaptiveColor
-	Success lipgloss.AdaptiveColor
-	Warning lipgloss.AdaptiveColor
-	Error   lipgloss.AdaptiveColor
+	Primary compat.AdaptiveColor
+	Text    compat.AdaptiveColor
+	Muted   compat.AdaptiveColor
+	Subtle  compat.AdaptiveColor
+	Border  compat.AdaptiveColor
+	Accent  compat.AdaptiveColor
+	Success compat.AdaptiveColor
+	Warning compat.AdaptiveColor
+	Error   compat.AdaptiveColor
 }
 
 const (
@@ -36,15 +38,30 @@ const (
 
 func basePalette() Palette {
 	return Palette{
-		Primary: lipgloss.AdaptiveColor{Light: "#6f4d8c", Dark: base0E},
-		Text:    lipgloss.AdaptiveColor{Light: base01, Dark: base05},
-		Muted:   lipgloss.AdaptiveColor{Light: base03, Dark: base04},
-		Subtle:  lipgloss.AdaptiveColor{Light: base04, Dark: base03},
-		Border:  lipgloss.AdaptiveColor{Light: base01, Dark: base02},
-		Accent:  lipgloss.AdaptiveColor{Light: "#4068a0", Dark: base0D},
-		Success: lipgloss.AdaptiveColor{Light: "#5a9b65", Dark: base0B},
-		Warning: lipgloss.AdaptiveColor{Light: "#b89556", Dark: base0A},
-		Error:   lipgloss.AdaptiveColor{Light: "#b86080", Dark: base08},
+		Primary: compat.AdaptiveColor{
+			Light: lipgloss.Color("#6f4d8c"),
+			Dark:  lipgloss.Color(base0E),
+		},
+		Text:   compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base05)},
+		Muted:  compat.AdaptiveColor{Light: lipgloss.Color(base03), Dark: lipgloss.Color(base04)},
+		Subtle: compat.AdaptiveColor{Light: lipgloss.Color(base04), Dark: lipgloss.Color(base03)},
+		Border: compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base02)},
+		Accent: compat.AdaptiveColor{
+			Light: lipgloss.Color("#4068a0"),
+			Dark:  lipgloss.Color(base0D),
+		},
+		Success: compat.AdaptiveColor{
+			Light: lipgloss.Color("#5a9b65"),
+			Dark:  lipgloss.Color(base0B),
+		},
+		Warning: compat.AdaptiveColor{
+			Light: lipgloss.Color("#b89556"),
+			Dark:  lipgloss.Color(base0A),
+		},
+		Error: compat.AdaptiveColor{
+			Light: lipgloss.Color("#b86080"),
+			Dark:  lipgloss.Color(base08),
+		},
 	}
 }
 
@@ -64,18 +81,18 @@ func Default() Palette {
 	return palette
 }
 
-func overrideColor(color lipgloss.AdaptiveColor, name string) lipgloss.AdaptiveColor {
+func overrideColor(color compat.AdaptiveColor, name string) compat.AdaptiveColor {
 	if v, ok := envColor("UTS_COLOR_" + name); ok {
-		color.Light = v
-		color.Dark = v
+		color.Light = lipgloss.Color(v)
+		color.Dark = lipgloss.Color(v)
 	}
 
 	if v, ok := envColor("UTS_COLOR_" + name + "_LIGHT"); ok {
-		color.Light = v
+		color.Light = lipgloss.Color(v)
 	}
 
 	if v, ok := envColor("UTS_COLOR_" + name + "_DARK"); ok {
-		color.Dark = v
+		color.Dark = lipgloss.Color(v)
 	}
 
 	return color
@@ -97,5 +114,5 @@ func ColorEnabled() bool {
 		return true
 	}
 
-	return lipgloss.DefaultRenderer().ColorProfile().Name() != "ascii"
+	return colorprofile.Detect(os.Stdout, os.Environ()) != colorprofile.Ascii
 }
