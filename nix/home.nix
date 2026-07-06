@@ -1,10 +1,16 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   cfg = config.programs.uts;
-in {
+in
+{
   options.programs.uts = {
-    enable = lib.mkEnableOption "uts - all-in-one utility toolkit";
+    enable = lib.mkEnableOption "uts - one CLI for every format";
     package = lib.mkOption {
       type = lib.types.package;
       default = pkgs.uts;

@@ -1,8 +1,10 @@
 {
-  description = "All-in-one utility toolkit for media compression and conversion";
+  description = "Single CLI for files compression and conversion";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
+
   outputs =
     { self, nixpkgs, ... }:
     let
@@ -12,11 +14,13 @@
         "aarch64-linux"
         "x86_64-linux"
       ];
-      latestVersion = "1.0.0";
+
+      latestVersion = "0.1.0";
+
       makeUtsPackage =
-        pkgs: version: usePrebuilt: commitHash:
-        pkgs.callPackage ./package.nix {
-          inherit version usePrebuilt commitHash;
+        pkgs: version: useZip: commitHash:
+        pkgs.callPackage ./nix/package.nix {
+          inherit version useZip commitHash;
         };
     in
     {
@@ -38,6 +42,6 @@
         }
       );
 
-      homeManagerModules.default = import ./home-module.nix;
+      homeManagerModules.default = import ./nix/home.nix;
     };
 }
