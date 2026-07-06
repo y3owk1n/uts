@@ -6,7 +6,7 @@ package cmd
 import (
 	"strings"
 
-	"github.com/charmbracelet/log"
+	"charm.land/log/v2"
 	"github.com/spf13/cobra"
 	"github.com/y3owk1n/uts/internal/archive"
 	"github.com/y3owk1n/uts/internal/compress"
