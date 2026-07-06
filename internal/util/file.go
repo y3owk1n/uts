@@ -111,6 +111,12 @@ func MaybeInPlace(compressed, original string) {
 	}
 }
 
+// RemoveInPlace deletes the original file after a successful in-place conversion
+// where the output has a different extension than the input.
+func RemoveInPlace(original string) {
+	_ = os.Remove(original)
+}
+
 // FileExists reports whether the given path exists.
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
@@ -145,4 +151,14 @@ func EnsureDir(path string) error {
 	}
 
 	return nil
+}
+
+// InPlaceHint returns " (in-place)" when inPlace is true, or "" otherwise.
+// Use it to append an in-place indicator to dry-run messages.
+func InPlaceHint(inPlace bool) string {
+	if inPlace {
+		return " (in-place)"
+	}
+
+	return ""
 }

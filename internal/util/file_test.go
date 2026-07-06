@@ -165,17 +165,80 @@ func TestEnsureDir(t *testing.T) {
 
 // TestMaybeInPlace tests MaybeInPlace.
 func TestMaybeInPlace(t *testing.T) {
+	// When compressed doesn't exist, original should remain untouched.
 	dir := t.TempDir()
 	orig := filepath.Join(dir, "original.txt")
 	comp := filepath.Join(dir, "compressed.txt")
 
 	//nolint:errcheck
-	os.WriteFile(orig, nil, 0o644)
+	os.WriteFile(orig, []byte("original"), 0o644)
 	MaybeInPlace(comp, orig)
 
-	_, err := os.Stat(orig)
+	data, err := os.ReadFile(orig)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if os.IsNotExist(err) {
-		t.Error("MaybeInPlace should not rename when compressed doesn't exist")
+	if string(data) != "original" {
+		t.Errorf("MaybeInPlace without compressed: got %q; want \"original\"", string(data))
+	}
+}
+
+// TestMaybeInPlaceRename tests that MaybeInPlace renames the compressed file to the original.
+func TestMaybeInPlaceRename(t *testing.T) {
+	dir := t.TempDir()
+	orig := filepath.Join(dir, "video.mp4")
+	comp := filepath.Join(dir, "video-small.mp4")
+
+	//nolint:errcheck
+	os.WriteFile(orig, []byte("old"), 0o644)
+	//nolint:errcheck
+	os.WriteFile(comp, []byte("compressed"), 0o644)
+
+	MaybeInPlace(comp, orig)
+
+	if FileExists(comp) {
+		t.Error("MaybeInPlace should remove the compressed file after rename")
+	}
+
+	data, err := os.ReadFile(orig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(data) != "compressed" {
+		t.Errorf("MaybeInPlace: original should contain compressed content; got %q", string(data))
+	}
+}
+
+// TestRemoveInPlace tests RemoveInPlace.
+func TestRemoveInPlace(t *testing.T) {
+	dir := t.TempDir()
+	orig := filepath.Join(dir, "video.mov")
+
+	//nolint:errcheck
+	os.WriteFile(orig, []byte("old"), 0o644)
+
+	RemoveInPlace(orig)
+
+	if FileExists(orig) {
+		t.Error("RemoveInPlace should delete the original file")
+	}
+}
+
+// TestRemoveInPlaceNonexistent tests that RemoveInPlace doesn't panic on missing files.
+func TestRemoveInPlaceNonexistent(t *testing.T) {
+	// Should not panic even if the file doesn't exist.
+	RemoveInPlace("/nonexistent/file.txt")
+}
+
+// TestInPlaceHint tests InPlaceHint.
+func TestInPlaceHint(t *testing.T) {
+	if got := InPlaceHint(true); got != " (in-place)" {
+		t.Errorf("InPlaceHint(true) = %q; want \" (in-place)\"", got)
+	}
+
+	if got := InPlaceHint(false); got != "" {
+		t.Errorf("InPlaceHint(false) = %q; want \"\"", got)
 	}
 }

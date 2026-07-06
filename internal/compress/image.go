@@ -51,11 +51,12 @@ func Image(opts ImageOptions) error {
 
 		if opts.DryRun {
 			ui.Message.Infof(
-				"[dry-run] Would compress %s -> %s (format=%s, quality=%d)",
+				"[dry-run] Would compress %s -> %s (format=%s, quality=%d)%s",
 				file,
 				out,
 				ext,
 				qualityVal,
+				util.InPlaceHint(opts.InPlace),
 			)
 
 			continue
@@ -109,6 +110,10 @@ func Image(opts ImageOptions) error {
 				util.HumanSize(newSize),
 				ratio,
 			)
+
+			if opts.InPlace {
+				util.MaybeInPlace(out, file)
+			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 		}

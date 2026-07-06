@@ -48,11 +48,12 @@ func Video(opts VideoOptions) error {
 
 		if opts.DryRun {
 			ui.Message.Infof(
-				"[dry-run] Would compress %s -> %s (crf=%d, preset=%s)",
+				"[dry-run] Would compress %s -> %s (crf=%d, preset=%s)%s",
 				file,
 				out,
 				crf,
 				preset,
+				util.InPlaceHint(opts.InPlace),
 			)
 
 			continue
@@ -94,6 +95,10 @@ func Video(opts VideoOptions) error {
 				util.HumanSize(newSize),
 				ratio,
 			)
+
+			if opts.InPlace {
+				util.MaybeInPlace(out, file)
+			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))
