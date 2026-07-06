@@ -3,7 +3,9 @@ package util
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -125,10 +127,20 @@ func FileExists(path string) bool {
 }
 
 // ResolveGlobs resolves glob patterns and returns matching file paths.
+// When recursive is true, patterns containing "**" are expanded recursively.
 func ResolveGlobs(args []string, recursive bool) []string {
 	var result []string
 	for _, arg := range args {
 		if strings.ContainsAny(arg, "*?[") {
+			if recursive && strings.Contains(arg, "**") {
+				matches := resolveRecursiveGlob(arg)
+				if len(matches) > 0 {
+					result = append(result, matches...)
+				}
+
+				continue
+			}
+
 			matches, err := filepath.Glob(arg)
 			if err != nil || len(matches) == 0 {
 				continue
@@ -141,6 +153,49 @@ func ResolveGlobs(args []string, recursive bool) []string {
 	}
 
 	return result
+}
+
+// resolveRecursiveGlob handles "**" glob patterns by walking the directory tree.
+func resolveRecursiveGlob(pattern string) []string {
+	parts := strings.SplitN(pattern, "**", 2)
+	if len(parts) != 2 {
+		return nil
+	}
+
+	root := parts[0]
+	suffix := parts[1]
+
+	// Clean leading separator from suffix so it matches like "/*.png".
+	suffix = strings.TrimPrefix(suffix, "/")
+
+	if root == "" {
+		root = "."
+	}
+
+	var matches []string
+
+	//nolint:nilerr // Walk errors are non-fatal; empty result is fine for globs.
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		match, _ := filepath.Match(suffix, filepath.Base(path))
+		if match {
+			matches = append(matches, path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil
+	}
+
+	return matches
 }
 
 // EnsureDir ensures the parent directory of the given path exists.
@@ -161,4 +216,44 @@ func InPlaceHint(inPlace bool) string {
 	}
 
 	return ""
+}
+
+// HasTool reports whether the named executable is in PATH.
+func HasTool(name string) bool {
+	_, err := exec.LookPath(name)
+
+	return err == nil
+}
+
+// CalcOutputPath computes an output path respecting the output directory.
+// When outputDir is non-empty the file is placed there; otherwise it stays
+// next to the input with the given suffix inserted before the extension.
+func CalcOutputPath(input, suffix, outputDir string) string {
+	if outputDir != "" {
+		return filepath.Join(outputDir, filepath.Base(input))
+	}
+
+	return OutputPath(input, suffix)
+}
+
+// CalcConvertOutputPath computes a conversion output path respecting the
+// output directory. When outputDir is non-empty the file is placed there;
+// otherwise it stays next to the input with the new extension.
+func CalcConvertOutputPath(input, targetExt, outputDir string) string {
+	if outputDir != "" {
+		return filepath.Join(outputDir, filepath.Base(input))
+	}
+
+	return ConvertOutputPath(input, targetExt)
+}
+
+// MaybeReplaceOrRemove handles in-place replacement after processing.
+// If compressed has the same extension as original it is renamed in place;
+// otherwise the original is deleted (used for conversions to different formats).
+func MaybeReplaceOrRemove(compressed, original string) {
+	if filepath.Ext(compressed) == filepath.Ext(original) {
+		MaybeInPlace(compressed, original)
+	} else {
+		RemoveInPlace(original)
+	}
 }

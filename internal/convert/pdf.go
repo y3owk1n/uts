@@ -94,7 +94,7 @@ func pdfToImages(opts PDFOptions) error {
 
 		var convertErr error
 		switch {
-		case hasTool("pdftoppm"):
+		case util.HasTool("pdftoppm"):
 			imgExt := target
 			if target == "jpg" {
 				imgExt = "jpeg"
@@ -104,7 +104,7 @@ func pdfToImages(opts PDFOptions) error {
 				Run()
 		case hasMagick():
 			magick := "magick"
-			if !hasTool("magick") {
+			if !util.HasTool("magick") {
 				magick = "convert"
 			}
 
@@ -189,7 +189,7 @@ func imagesToPDF(opts PDFOptions) error {
 	var convertErr error
 	if hasMagick() {
 		magick := "magick"
-		if !hasTool("magick") {
+		if !util.HasTool("magick") {
 			magick = "convert"
 		}
 

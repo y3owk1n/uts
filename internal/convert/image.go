@@ -60,7 +60,7 @@ func Image(opts ImageOptions) error {
 			continue
 		}
 
-		out := util.ConvertOutputPath(file, target)
+		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf(
@@ -92,14 +92,14 @@ func Image(opts ImageOptions) error {
 		var convertErr error
 		switch {
 		case hasMagick():
-			if hasTool("magick") {
+			if util.HasTool("magick") {
 				convertErr = exec.CommandContext(context.Background(), "magick", file, "-quality", strconv.Itoa(qualityVal), "-strip", out).
 					Run()
 			} else {
 				convertErr = exec.CommandContext(context.Background(), "convert", file, "-quality", strconv.Itoa(qualityVal), "-strip", out).
 					Run()
 			}
-		case hasTool("sips"):
+		case util.HasTool("sips"):
 			sipsFmt := target
 			if target == "jpg" {
 				sipsFmt = "jpeg"
@@ -125,7 +125,7 @@ func Image(opts ImageOptions) error {
 			)
 
 			if opts.InPlace {
-				util.RemoveInPlace(file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)
@@ -140,11 +140,5 @@ func Image(opts ImageOptions) error {
 }
 
 func hasMagick() bool {
-	return hasTool("magick") || hasTool("convert")
-}
-
-func hasTool(name string) bool {
-	_, err := exec.LookPath(name)
-
-	return err == nil
+	return util.HasTool("magick") || util.HasTool("convert")
 }

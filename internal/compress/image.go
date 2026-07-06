@@ -44,7 +44,7 @@ func Image(opts ImageOptions) error {
 		}
 
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file), "."))
-		out := util.OutputPath(file, "small")
+		out := util.CalcOutputPath(file, "small", opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
@@ -112,7 +112,7 @@ func Image(opts ImageOptions) error {
 			)
 
 			if opts.InPlace {
-				util.MaybeInPlace(out, file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
@@ -127,7 +127,7 @@ func Image(opts ImageOptions) error {
 }
 
 func compressPNG(file, out string, quality int) error {
-	if hasTool("pngquant") {
+	if util.HasTool("pngquant") {
 		ui.Message.Mutedf("Using pngquant")
 
 		cmd := exec.CommandContext(context.Background(), "pngquant",
@@ -139,7 +139,7 @@ func compressPNG(file, out string, quality int) error {
 			return err
 		}
 
-		if hasTool("optipng") && util.FileExists(out) {
+		if util.HasTool("optipng") && util.FileExists(out) {
 			ui.Message.Mutedf("Optimizing with optipng")
 
 			_ = exec.CommandContext(context.Background(), "optipng", "-quiet", "-o2", out).Run()
@@ -148,7 +148,7 @@ func compressPNG(file, out string, quality int) error {
 		return nil
 	}
 
-	if hasTool("optipng") {
+	if util.HasTool("optipng") {
 		ui.Message.Mutedf("Using optipng")
 
 		err := copyFile(file, out)
@@ -163,7 +163,7 @@ func compressPNG(file, out string, quality int) error {
 }
 
 func compressJPEG(file, out string, quality int) error {
-	if hasTool("jpegoptim") {
+	if util.HasTool("jpegoptim") {
 		ui.Message.Mutedf("Using jpegoptim")
 
 		err := copyFile(file, out)
@@ -179,7 +179,7 @@ func compressJPEG(file, out string, quality int) error {
 }
 
 func compressWebP(file, out string, quality int) error {
-	if hasTool("cwebp") {
+	if util.HasTool("cwebp") {
 		ui.Message.Mutedf("Using cwebp")
 
 		return exec.CommandContext(context.Background(), "cwebp", "-q", strconv.Itoa(quality), "-m", "6", file, "-o", out).
@@ -190,7 +190,7 @@ func compressWebP(file, out string, quality int) error {
 }
 
 func compressGIF(file, out string) error {
-	if hasTool("gifsicle") {
+	if util.HasTool("gifsicle") {
 		ui.Message.Mutedf("Using gifsicle")
 
 		return exec.CommandContext(context.Background(), "gifsicle", "-O3", "--lossy=80", file, "-o", out).
@@ -205,7 +205,7 @@ func compressGeneric(file, out string, quality int) error {
 }
 
 func compressHEIC(file, out string, quality int) error {
-	if hasTool("heif-convert") {
+	if util.HasTool("heif-convert") {
 		ui.Message.Mutedf("Using heif-convert")
 
 		return exec.CommandContext(context.Background(), "heif-convert", "-q", strconv.Itoa(quality), file, out).
@@ -216,14 +216,14 @@ func compressHEIC(file, out string, quality int) error {
 }
 
 func compressAVIF(file, out string, quality int) error {
-	if hasTool("cavif") {
+	if util.HasTool("cavif") {
 		ui.Message.Mutedf("Using cavif")
 
 		return exec.CommandContext(context.Background(), "cavif", "-q", strconv.Itoa(quality), "-s", "6", "-o", out, file).
 			Run()
 	}
 
-	if hasTool("avifenc") {
+	if util.HasTool("avifenc") {
 		ui.Message.Mutedf("Using avifenc")
 
 		quantizer := (100 - quality) * 63 / 100
@@ -236,14 +236,14 @@ func compressAVIF(file, out string, quality int) error {
 }
 
 func magickCmd(input, output string, quality int) error {
-	if hasTool("magick") {
+	if util.HasTool("magick") {
 		ui.Message.Mutedf("Using ImageMagick")
 
 		return exec.CommandContext(context.Background(), "magick", input, "-quality", strconv.Itoa(quality), "-strip", output).
 			Run()
 	}
 
-	if hasTool("convert") {
+	if util.HasTool("convert") {
 		ui.Message.Mutedf("Using ImageMagick (convert)")
 
 		return exec.CommandContext(context.Background(), "convert", input, "-quality", strconv.Itoa(quality), "-strip", output).
@@ -262,10 +262,4 @@ func copyFile(src, dst string) error {
 	}
 
 	return os.WriteFile(dst, input, 0o644)
-}
-
-func hasTool(name string) bool {
-	_, err := exec.LookPath(name)
-
-	return err == nil
 }

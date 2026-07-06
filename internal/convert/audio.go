@@ -53,7 +53,7 @@ func Audio(opts AudioOptions) error {
 			continue
 		}
 
-		out := util.ConvertOutputPath(file, extHint)
+		out := util.CalcConvertOutputPath(file, extHint, opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf(
@@ -101,7 +101,7 @@ func Audio(opts AudioOptions) error {
 			)
 
 			if opts.InPlace {
-				util.RemoveInPlace(file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)
