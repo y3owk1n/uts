@@ -152,6 +152,7 @@ func imagesToPDF(opts PDFOptions) error {
 	}
 
 	os.MkdirAll(filepath.Dir(outPath), 0755)
+	ui.Message.Stepf("Combining %d images → PDF", len(validFiles))
 	sp := ui.NewSpinner(nil, 0)
 	sp.SetSuffix("Combining images...")
 	sp.Start()
