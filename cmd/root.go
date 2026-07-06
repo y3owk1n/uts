@@ -97,4 +97,5 @@ func init() {
 	RootCmd.AddCommand(archiveCmd)
 	RootCmd.AddCommand(convertCmd)
 	RootCmd.AddCommand(infoCmd)
+	RootCmd.AddCommand(doctorCmd)
 }

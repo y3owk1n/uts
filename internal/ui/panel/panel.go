@@ -46,7 +46,7 @@ func Panel(palette style.Palette, content string) string {
 func Section(palette style.Palette, title, content string) string {
 	outer := width()
 	frameWidth := outer - 2
-	contentWidth := frameWidth - 2
+	contentWidth := frameWidth - 4
 
 	frame := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
