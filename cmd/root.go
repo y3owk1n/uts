@@ -18,13 +18,51 @@ var (
 	Version = "1.0.0"
 )
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "uts",
 	Short: "All-in-one utility toolkit",
-	Long: `uts is an all-in-one utility toolkit for compressing and converting
-media files including video, image, audio, PDF, and archives.
+	Long: `uts — All-in-one utility toolkit v` + Version + `
 
-Usage: uts <category> <action> <input...> [options]`,
+A modular CLI tool with category-based subcommands for compressing,
+converting, and managing media files.
+
+USAGE
+  uts <category> <action> <input...> [options]
+
+CATEGORIES
+  video     Video files (mp4, mov, mkv, avi, webm)
+  image     Images (png, jpg, webp, gif, bmp, tiff, heic, avif)
+  pdf       PDF documents
+  audio     Audio files (wav, flac, aac, mp3, m4a, opus)
+  archive   Directories/files into archives
+
+ACTIONS
+  compress  Compress files (available for all categories)
+  convert   Convert between formats (image, video, audio, pdf)
+  extract   Extract archives (archive only)
+  list      List archive contents (archive only)
+
+TOP-LEVEL COMMANDS
+  info      Show file info and suggestions
+  convert   Convert between formats directly
+
+QUALITY
+  high      Best quality, larger files      (crf=23, 192k audio, 300dpi PDF)
+  medium    Balanced quality and size       (crf=28, 128k audio, 150dpi PDF)
+  low       Smallest files, lower quality   (crf=32, 96k audio, 72dpi PDF)
+  <number>  Numeric value (CRF, quality %, kbps, or DPI)
+
+QUICK EXAMPLES
+  uts image compress screenshot.png -q low
+  uts video compress recording.mp4 -i
+  uts convert image photo.heic --to jpg
+  uts convert image screenshot.png --to webp -q 85
+  uts info video.mp4
+
+OUTPUT
+  Files are saved as <name>-small.<ext> in the same directory by default.
+  Use -o to specify a different output directory.
+  Use -i to replace the original file in-place.`,
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
@@ -34,39 +72,39 @@ Usage: uts <category> <action> <input...> [options]`,
 }
 
 func Execute() error {
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if verbose {
 			log.SetLevel(log.DebugLevel)
 		}
 		return nil
 	}
 
-	return rootCmd.Execute()
+	return RootCmd.Execute()
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&quality, "quality", "q", "medium",
-		"Quality preset: low, medium, high, or a number")
-	rootCmd.PersistentFlags().StringVarP(&outputDir, "output", "o", "",
+	RootCmd.PersistentFlags().StringVarP(&quality, "quality", "q", "medium",
+		"Quality preset: low, medium, high, or a number (CRF/quality/bitrate/DPI)")
+	RootCmd.PersistentFlags().StringVarP(&outputDir, "output", "o", "",
 		"Output directory (default: same as input)")
-	rootCmd.PersistentFlags().BoolVarP(&inPlace, "in-place", "i", false,
+	RootCmd.PersistentFlags().BoolVarP(&inPlace, "in-place", "i", false,
 		"Replace original file with compressed version")
-	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "n", false,
+	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "n", false,
 		"Show what would be done without doing it")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
 		"Verbose output")
-	rootCmd.PersistentFlags().BoolVarP(&recursive, "recursive", "r", false,
+	RootCmd.PersistentFlags().BoolVarP(&recursive, "recursive", "r", false,
 		"Enable recursive glob patterns")
-	rootCmd.PersistentFlags().StringVar(&algorithm, "algorithm", "auto",
+	RootCmd.PersistentFlags().StringVar(&algorithm, "algorithm", "auto",
 		"Archive algorithm (auto, gzip, zstd, xz, brotli, zip)")
-	rootCmd.PersistentFlags().StringVar(&targetFmt, "to", "",
+	RootCmd.PersistentFlags().StringVar(&targetFmt, "to", "",
 		"Target format for conversion")
 
-	rootCmd.AddCommand(videoCmd)
-	rootCmd.AddCommand(imageCmd)
-	rootCmd.AddCommand(pdfCmd)
-	rootCmd.AddCommand(audioCmd)
-	rootCmd.AddCommand(archiveCmd)
-	rootCmd.AddCommand(convertCmd)
-	rootCmd.AddCommand(infoCmd)
+	RootCmd.AddCommand(videoCmd)
+	RootCmd.AddCommand(imageCmd)
+	RootCmd.AddCommand(pdfCmd)
+	RootCmd.AddCommand(audioCmd)
+	RootCmd.AddCommand(archiveCmd)
+	RootCmd.AddCommand(convertCmd)
+	RootCmd.AddCommand(infoCmd)
 }
