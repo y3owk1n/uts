@@ -18,6 +18,8 @@ _Stop memorizing complex commands. Compress, convert, and inspect any media file
 
 </div>
 
+https://github.com/user-attachments/assets/2732009f-8096-4a52-820f-f5bc735adb19
+
 ---
 
 ## Why `uts`?
