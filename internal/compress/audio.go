@@ -45,7 +45,13 @@ func Audio(opts AudioOptions) error {
 		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
 
 		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would compress %s -> %s (bitrate=%s)", file, out, bitrate)
+			ui.Message.Infof(
+				"[dry-run] Would compress %s -> %s (bitrate=%s)%s",
+				file,
+				out,
+				bitrate,
+				util.InPlaceHint(opts.InPlace),
+			)
 
 			continue
 		}
@@ -82,6 +88,10 @@ func Audio(opts AudioOptions) error {
 				util.HumanSize(newSize),
 				ratio,
 			)
+
+			if opts.InPlace {
+				util.MaybeInPlace(out, file)
+			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))

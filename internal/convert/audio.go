@@ -17,6 +17,7 @@ type AudioOptions struct {
 	Target    string
 	Quality   string
 	OutputDir string
+	InPlace   bool
 	DryRun    bool
 }
 
@@ -65,7 +66,12 @@ func Audio(opts AudioOptions) error {
 		)
 
 		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would convert %s -> %s", file, out)
+			ui.Message.Infof(
+				"[dry-run] Would convert %s -> %s%s",
+				file,
+				out,
+				util.InPlaceHint(opts.InPlace),
+			)
 
 			continue
 		}
@@ -93,6 +99,10 @@ func Audio(opts AudioOptions) error {
 				util.HumanSize(origSize),
 				util.HumanSize(util.FileSize(out)),
 			)
+
+			if opts.InPlace {
+				util.RemoveInPlace(file)
+			}
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))

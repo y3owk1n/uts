@@ -73,7 +73,12 @@ func Image(opts ImageOptions) error {
 		)
 
 		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would convert %s -> %s", file, out)
+			ui.Message.Infof(
+				"[dry-run] Would convert %s -> %s%s",
+				file,
+				out,
+				util.InPlaceHint(opts.InPlace),
+			)
 
 			continue
 		}
@@ -118,6 +123,10 @@ func Image(opts ImageOptions) error {
 				util.HumanSize(origSize),
 				util.HumanSize(util.FileSize(out)),
 			)
+
+			if opts.InPlace {
+				util.RemoveInPlace(file)
+			}
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)
 		}
