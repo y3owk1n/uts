@@ -150,10 +150,10 @@ else
 
       # install shell completions
       if ${lib.boolToString (stdenv.buildPlatform.canExecute stdenv.hostPlatform)}; then
-      	installShellCompletion --cmd neru \
-      	--bash <($out/bin/neru completion bash) \
-      	--fish <($out/bin/neru completion fish) \
-      	--zsh <($out/bin/neru completion zsh)
+      	installShellCompletion --cmd uts \
+      	--bash <($out/bin/uts completion bash) \
+      	--fish <($out/bin/uts completion fish) \
+      	--zsh <($out/bin/uts completion zsh)
       fi
     '';
 
