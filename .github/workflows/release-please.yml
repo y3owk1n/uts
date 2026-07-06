@@ -1,0 +1,30 @@
+on:
+    push:
+        branches:
+            - main
+permissions:
+    contents: write
+    pull-requests: write
+name: release-please
+jobs:
+    release-please:
+        runs-on: ubuntu-latest
+        outputs:
+            release_created: ${{ steps.release.outputs.release_created }}
+            tag_name: ${{ steps.release.outputs.tag_name }}
+        steps:
+            - uses: googleapis/release-please-action@v5
+              id: release
+              with:
+                  token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+
+    publish-release-artifacts:
+        needs:
+            - release-please
+        if: ${{ needs.release-please.outputs.release_created == 'true' }}
+        uses: ./.github/workflows/publish-artifacts.yml
+        with:
+            release_tag: ${{ needs.release-please.outputs.tag_name }}
+            version_override: ${{ needs.release-please.outputs.tag_name }}
+        secrets:
+            upload_token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}

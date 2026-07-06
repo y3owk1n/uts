@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +19,10 @@ var (
 
 	// Version is the current version of uts.
 	Version = "1.0.0"
+	// GitCommit is the current commit hash of uts.
+	GitCommit = "unknown"
+	// BuildDate is the date of the current build.
+	BuildDate = "unknown"
 )
 
 // RootCmd is the root command for uts.
@@ -58,6 +64,15 @@ func Execute() error {
 }
 
 func init() {
+	RootCmd.SetVersionTemplate(
+		fmt.Sprintf(
+			"uts version %s\nGit commit: %s\nBuild date: %s\n",
+			Version,
+			GitCommit,
+			BuildDate,
+		),
+	)
+
 	RootCmd.PersistentFlags().StringVarP(&quality, "quality", "q", "medium",
 		"Quality preset: low, medium, high, or a number (CRF/quality/bitrate/DPI)")
 	RootCmd.PersistentFlags().StringVarP(&outputDir, "output", "o", "",

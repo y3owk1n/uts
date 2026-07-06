@@ -1,0 +1,191 @@
+on:
+    workflow_call:
+        inputs:
+            release_tag:
+                required: true
+                type: string
+            version_override:
+                required: true
+                type: string
+        secrets:
+            upload_token:
+                required: false
+
+name: publish-artifacts
+
+jobs:
+    build-darwin-arm64-artifacts:
+        runs-on: macos-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: "1.26.4"
+
+            - uses: extractions/setup-just@v4
+              with:
+                  just-version: "1.54.0"
+
+            - name: Build uts darwin arm64 artifact
+              run: just release-ci-darwin arm64 ${{ inputs.version_override }}
+
+            - name: Generate man pages
+              run: go run ./cmd/genman build/man
+
+            - name: Bundle uts-darwin-arm64
+              run: |
+                  mkdir -p build/arm64/share/man/man1
+                  cp build/man/*.1 build/arm64/share/man/man1/
+                  mkdir -p build/arm64/bin
+                  cp bin/uts-darwin-arm64 build/arm64/bin/uts
+                  chmod +x build/arm64/bin/uts
+
+                  cd build/arm64
+                  zip -r ../../uts-darwin-arm64.zip bin share
+                  cd ../..
+
+            - name: Generate darwin arm64 checksum
+              run: |
+                  shasum -a 256 uts-darwin-arm64.zip | awk '{print $1}' > uts-darwin-arm64.zip.sha256
+                  ls -l uts-darwin-arm64.zip uts-darwin-arm64.zip.sha256
+
+            - name: Upload darwin arm64 release artifacts
+              env:
+                  GH_TOKEN: ${{ secrets.upload_token || github.token }}
+              run: |
+                  gh release upload "${{ inputs.release_tag }}" uts-darwin-arm64.zip uts-darwin-arm64.zip.sha256 --clobber
+
+    build-darwin-amd64-artifacts:
+        runs-on: macos-15-intel
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: "1.26.4"
+
+            - uses: extractions/setup-just@v4
+              with:
+                  just-version: "1.54.0"
+
+            - name: Build uts darwin amd64 artifact
+              run: just release-ci-darwin amd64 ${{ inputs.version_override }}
+
+            - name: Generate man pages
+              run: go run ./cmd/genman build/man
+
+            - name: Bundle uts-darwin-amd64
+              run: |
+                  mkdir -p build/amd64/share/man/man1
+                  cp build/man/*.1 build/amd64/share/man/man1/
+                  mkdir -p build/amd64/bin
+                  cp bin/uts-darwin-amd64 build/amd64/bin/uts
+                  chmod +x build/amd64/bin/uts
+
+                  cd build/amd64
+                  zip -r ../../uts-darwin-amd64.zip bin share
+                  cd ../..
+
+            - name: Generate darwin amd64 checksum
+              run: |
+                  shasum -a 256 uts-darwin-amd64.zip | awk '{print $1}' > uts-darwin-amd64.zip.sha256
+                  ls -l uts-darwin-amd64.zip uts-darwin-amd64.zip.sha256
+
+            - name: Upload darwin amd64 release artifacts
+              env:
+                  GH_TOKEN: ${{ secrets.upload_token || github.token }}
+              run: |
+                  gh release upload "${{ inputs.release_tag }}" uts-darwin-amd64.zip uts-darwin-amd64.zip.sha256 --clobber
+
+    build-linux-amd64-artifacts:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: "1.26.4"
+
+            - uses: extractions/setup-just@v4
+              with:
+                  just-version: "1.54.0"
+
+            - name: Build uts linux amd64 artifact
+              run: just release-ci-linux amd64 ${{ inputs.version_override }}
+
+            - name: Generate man pages
+              run: go run ./cmd/genman build/man
+
+            - name: Bundle uts-linux-amd64
+              run: |
+                  mkdir -p build/linux-amd64/bin
+                  cp bin/uts-linux-amd64 build/linux-amd64/bin/uts
+                  chmod +x build/linux-amd64/bin/uts
+                  mkdir -p build/linux-amd64/share/man/man1
+                  cp build/man/*.1 build/linux-amd64/share/man/man1/
+
+                  cd build/linux-amd64
+                  zip -r ../../uts-linux-amd64.zip bin share
+                  cd ../..
+
+            - name: Generate linux amd64 checksum
+              run: |
+                  sha256sum uts-linux-amd64.zip | awk '{print $1}' > uts-linux-amd64.zip.sha256
+                  ls -l uts-linux-amd64.zip uts-linux-amd64.zip.sha256
+
+            - name: Upload linux amd64 release artifacts
+              env:
+                  GH_TOKEN: ${{ secrets.upload_token || github.token }}
+              run: |
+                  gh release upload "${{ inputs.release_tag }}" uts-linux-amd64.zip uts-linux-amd64.zip.sha256 --clobber
+
+    build-linux-arm64-artifacts:
+        runs-on: ubuntu-24.04-arm
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: "1.26.4"
+
+            - uses: extractions/setup-just@v4
+              with:
+                  just-version: "1.54.0"
+
+            - name: Build uts linux arm64 artifact
+              run: just release-ci-linux arm64 ${{ inputs.version_override }}
+
+            - name: Generate man pages
+              run: go run ./cmd/genman build/man
+
+            - name: Bundle uts-linux-arm64
+              run: |
+                  mkdir -p build/linux-arm64/bin
+                  cp bin/uts-linux-arm64 build/linux-arm64/bin/uts
+                  chmod +x build/linux-arm64/bin/uts
+                  mkdir -p build/linux-arm64/share/man/man1
+                  cp build/man/*.1 build/linux-arm64/share/man/man1/
+
+                  cd build/linux-arm64
+                  zip -r ../../uts-linux-arm64.zip bin share
+                  cd ../..
+
+            - name: Generate linux arm64 checksum
+              run: |
+                  sha256sum uts-linux-arm64.zip | awk '{print $1}' > uts-linux-arm64.zip.sha256
+                  ls -l uts-linux-arm64.zip uts-linux-arm64.zip.sha256
+
+            - name: Upload linux arm64 release artifacts
+              env:
+                  GH_TOKEN: ${{ secrets.upload_token || github.token }}
+              run: |
+                  gh release upload "${{ inputs.release_tag }}" uts-linux-arm64.zip uts-linux-arm64.zip.sha256 --clobber
