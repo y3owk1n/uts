@@ -12,14 +12,23 @@ build:
     env CGO_ENABLED=0 go build -ldflags="{{ LDFLAGS }}" -trimpath -o bin/uts ./main.go
     @echo "✓ Build complete: bin/uts"
 
-release-ci VERSION_OVERRIDE:
-    @echo "Building release artifacts..."
-    mkdir -p build
-    env GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }}" -trimpath -o build/uts-darwin-arm64 ./main.go
-    env GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }}" -trimpath -o build/uts-darwin-amd64 ./main.go
-    env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }}" -trimpath -o build/uts-linux-arm64 ./main.go
-    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }}" -trimpath -o build/uts-linux-amd64 ./main.go
-    @echo "✓ Release artifacts built"
+release-ci-darwin ARCH VERSION_OVERRIDE:
+    @echo "Building release artifact (darwin/{{ ARCH }}) for CI..."
+    @echo "Version: {{ VERSION_OVERRIDE }}"
+    @echo "Commit: {{ GIT_COMMIT }}"
+    @echo "Date: {{ BUILD_DATE }}"
+    mkdir -p bin
+    CGO_ENABLED=0 GOOS=darwin GOARCH={{ ARCH }} go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }} -X github.com/y3owk1n/uts/cmd.GitCommit={{ GIT_COMMIT }} -X github.com/y3owk1n/uts/cmd.BuildDate={{ BUILD_DATE }}" -trimpath -o bin/uts-darwin-{{ ARCH }} ./main.go
+    @echo "✓ Release artifact for darwin/{{ ARCH }} built successfully"
+
+release-ci-linux ARCH VERSION_OVERRIDE:
+    @echo "Building release artifact (linux/{{ ARCH }}) for CI..."
+    @echo "Version: {{ VERSION_OVERRIDE }}"
+    @echo "Commit: {{ GIT_COMMIT }}"
+    @echo "Date: {{ BUILD_DATE }}"
+    mkdir -p bin
+    CGO_ENABLED=0 GOOS=linux GOARCH={{ ARCH }} go build -ldflags="-s -w -X github.com/y3owk1n/uts/cmd.Version={{ VERSION_OVERRIDE }} -X github.com/y3owk1n/uts/cmd.GitCommit={{ GIT_COMMIT }} -X github.com/y3owk1n/uts/cmd.BuildDate={{ BUILD_DATE }}" -trimpath -o bin/uts-linux-{{ ARCH }} ./main.go
+    @echo "✓ Release artifact for linux/{{ ARCH }} built successfully"
 
 test: test-unit test-integration
 
