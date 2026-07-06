@@ -4,7 +4,7 @@ package table
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 

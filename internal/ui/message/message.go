@@ -2,10 +2,11 @@ package message
 
 import (
 	"fmt"
+	"image/color"
 	"io"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
@@ -182,7 +183,7 @@ func (pr *Printer) Detail(text string) string {
 	return pr.types.Muted.Render("    "+text) + "\n"
 }
 
-func (pr *Printer) styledIconLine(icon string, color lipgloss.AdaptiveColor) string {
+func (pr *Printer) styledIconLine(icon string, color color.Color) string {
 	return lipgloss.NewStyle().Bold(true).Foreground(color).Render(icon) + " "
 }
 
@@ -190,7 +191,7 @@ func (pr *Printer) line(
 	writer io.Writer,
 	icon string,
 	message string,
-	iconColor lipgloss.AdaptiveColor,
+	iconColor color.Color,
 ) {
 	styledIcon := lipgloss.NewStyle().Bold(true).Foreground(iconColor).Render(icon)
 	styledMsg := pr.types.Body.Render(message)
