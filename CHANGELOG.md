@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/y3owk1n/uts/compare/v0.1.1...v0.1.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* bug fixes and code quality improvements ([#9](https://github.com/y3owk1n/uts/issues/9)) ([c90e480](https://github.com/y3owk1n/uts/commit/c90e480bf2fe082629561bde768292db2c7f1bde))
+* implement -i flag for compress and convert commands ([#7](https://github.com/y3owk1n/uts/issues/7)) ([e69b5a9](https://github.com/y3owk1n/uts/commit/e69b5a95310ece5c43ec86bf5a1a2b73e4f92cf0))
+
 ## [0.1.1](https://github.com/y3owk1n/uts/compare/v0.1.0...v0.1.1) (2026-07-06)
 
 
