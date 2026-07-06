@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/y3owk1n/uts/compare/v0.1.0...v0.1.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ci:** `release-ci-*` is missing ([ebee762](https://github.com/y3owk1n/uts/commit/ebee762c5d9d233e11e7034fc2a78da7a5804925))
+
 ## [0.1.0](https://github.com/y3owk1n/uts/compare/v0.0.1...v0.1.0) (2026-07-06)
 
 
