@@ -9,6 +9,7 @@ import (
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
+// Icons defines the set of icons used in messages.
 type Icons struct {
 	Info    string
 	Success string
@@ -19,6 +20,7 @@ type Icons struct {
 	Arrow   string
 }
 
+// DefaultIcons returns the default icon set.
 func DefaultIcons() Icons {
 	return Icons{
 		Info:    "ℹ",
@@ -31,6 +33,7 @@ func DefaultIcons() Icons {
 	}
 }
 
+// Printer formats and writes styled messages.
 type Printer struct {
 	palette style.Palette
 	types   style.Type
@@ -39,13 +42,16 @@ type Printer struct {
 	errOut  io.Writer
 }
 
+// New creates a new Printer.
 func New(palette style.Palette, types style.Type, icons Icons, out, errOut io.Writer) *Printer {
 	if out == nil {
 		out = os.Stdout
 	}
+
 	if errOut == nil {
 		errOut = os.Stderr
 	}
+
 	return &Printer{
 		palette: palette,
 		types:   types,
@@ -55,103 +61,139 @@ func New(palette style.Palette, types style.Type, icons Icons, out, errOut io.Wr
 	}
 }
 
+// Default returns a Printer with default settings.
 func Default() *Printer {
 	palette := style.Default()
 	types := style.Types(palette)
+
 	return New(palette, types, DefaultIcons(), os.Stdout, os.Stderr)
 }
 
-func (p *Printer) Infof(format string, args ...any) {
-	p.line(p.out, p.icons.Info, fmt.Sprintf(format, args...), p.palette.Accent)
+// Infof prints an info message.
+func (pr *Printer) Infof(format string, args ...any) {
+	pr.line(pr.out, pr.icons.Info, fmt.Sprintf(format, args...), pr.palette.Accent)
 }
 
-func (p *Printer) Successf(format string, args ...any) {
-	p.line(p.out, p.icons.Success, fmt.Sprintf(format, args...), p.palette.Success)
+// Successf prints a success message.
+func (pr *Printer) Successf(format string, args ...any) {
+	pr.line(pr.out, pr.icons.Success, fmt.Sprintf(format, args...), pr.palette.Success)
 }
 
-func (p *Printer) Warnf(format string, args ...any) {
-	p.line(p.out, p.icons.Warn, fmt.Sprintf(format, args...), p.palette.Warning)
+// Warnf prints a warning message.
+func (pr *Printer) Warnf(format string, args ...any) {
+	pr.line(pr.out, pr.icons.Warn, fmt.Sprintf(format, args...), pr.palette.Warning)
 }
 
-func (p *Printer) Errorf(format string, args ...any) {
-	p.line(p.errOut, p.icons.Error, fmt.Sprintf(format, args...), p.palette.Error)
+// Errorf prints an error message.
+func (pr *Printer) Errorf(format string, args ...any) {
+	pr.line(pr.errOut, pr.icons.Error, fmt.Sprintf(format, args...), pr.palette.Error)
 }
 
-func (p *Printer) Stepf(format string, args ...any) {
-	p.line(p.out, p.icons.Step, fmt.Sprintf(format, args...), p.palette.Primary)
+// Stepf prints a step message.
+func (pr *Printer) Stepf(format string, args ...any) {
+	pr.line(pr.out, pr.icons.Step, fmt.Sprintf(format, args...), pr.palette.Primary)
 }
 
-func (p *Printer) Bulletf(format string, args ...any) {
+// Bulletf prints a bullet point.
+func (pr *Printer) Bulletf(format string, args ...any) {
 	styled := lipgloss.NewStyle().
-		Foreground(p.palette.Muted).
-		Render("  " + p.icons.Bullet + " " + fmt.Sprintf(format, args...))
-	fmt.Fprintln(p.out, styled)
+		Foreground(pr.palette.Muted).
+		Render("  " + pr.icons.Bullet + " " + fmt.Sprintf(format, args...))
+	//nolint:errcheck
+	fmt.Fprintln(pr.out, styled)
 }
 
-func (p *Printer) Mutedf(format string, args ...any) {
-	fmt.Fprintln(p.out, p.types.Muted.Render(fmt.Sprintf(format, args...)))
+// Mutedf prints a muted message.
+func (pr *Printer) Mutedf(format string, args ...any) {
+	//nolint:errcheck
+	fmt.Fprintln(pr.out, pr.types.Muted.Render(fmt.Sprintf(format, args...)))
 }
 
-func (p *Printer) Pair(key, value string) {
-	styledKey := p.types.Key.Render(key)
-	styledVal := p.types.Code.Render(value)
-	fmt.Fprintf(p.out, "%s  %s\n", styledKey, styledVal)
+// Pair prints a key-value pair.
+func (pr *Printer) Pair(key, value string) {
+	styledKey := pr.types.Key.Render(key)
+	styledVal := pr.types.Code.Render(value)
+	//nolint:errcheck
+	fmt.Fprintf(pr.out, "%s  %s\n", styledKey, styledVal)
 }
 
-func (p *Printer) PairLine(key, value string) string {
-	return p.types.Key.Render(key) + "  " + p.types.Code.Render(value) + "\n"
+// PairLine returns a key-value pair as a string.
+func (pr *Printer) PairLine(key, value string) string {
+	return pr.types.Key.Render(key) + "  " + pr.types.Code.Render(value) + "\n"
 }
 
-func (p *Printer) Highlight(text string) string {
-	return lipgloss.NewStyle().Bold(true).Foreground(p.palette.Primary).Render(text)
+// Highlight returns bold primary-colored text.
+func (pr *Printer) Highlight(text string) string {
+	return lipgloss.NewStyle().Bold(true).Foreground(pr.palette.Primary).Render(text)
 }
 
-func (p *Printer) Dim(text string) string {
-	return p.types.Muted.Render(text)
+// Dim returns muted text.
+func (pr *Printer) Dim(text string) string {
+	return pr.types.Muted.Render(text)
 }
 
-func (p *Printer) Success(text string) string {
-	return lipgloss.NewStyle().Foreground(p.palette.Success).Render(text)
+// Success returns green success-colored text.
+func (pr *Printer) Success(text string) string {
+	return lipgloss.NewStyle().Foreground(pr.palette.Success).Render(text)
 }
 
-func (p *Printer) Warn(text string) string {
-	return lipgloss.NewStyle().Foreground(p.palette.Warning).Render(text)
+// Warn returns yellow warning-colored text.
+func (pr *Printer) Warn(text string) string {
+	return lipgloss.NewStyle().Foreground(pr.palette.Warning).Render(text)
 }
 
-func (p *Printer) Error(text string) string {
-	return lipgloss.NewStyle().Foreground(p.palette.Error).Render(text)
+// Error returns red error-colored text.
+func (pr *Printer) Error(text string) string {
+	return lipgloss.NewStyle().Foreground(pr.palette.Error).Render(text)
 }
 
-func (p *Printer) Accent(text string) string {
-	return lipgloss.NewStyle().Foreground(p.palette.Accent).Render(text)
+// Accent returns accent-colored text.
+func (pr *Printer) Accent(text string) string {
+	return lipgloss.NewStyle().Foreground(pr.palette.Accent).Render(text)
 }
 
-func (p *Printer) Text(text string) string {
-	return lipgloss.NewStyle().Foreground(p.palette.Text).Render(text)
+// Text returns standard text-colored text.
+func (pr *Printer) Text(text string) string {
+	return lipgloss.NewStyle().Foreground(pr.palette.Text).Render(text)
 }
 
-func (p *Printer) SuccessRow(text string) string {
-	return p.styledIconLine(p.icons.Success, p.palette.Success) + p.types.Body.Render(text) + "\n"
+// SuccessRow returns a success row with icon.
+func (pr *Printer) SuccessRow(text string) string {
+	return pr.styledIconLine(
+		pr.icons.Success,
+		pr.palette.Success,
+	) + pr.types.Body.Render(
+		text,
+	) + "\n"
 }
 
-func (p *Printer) WarnRow(text string) string {
-	return p.styledIconLine(p.icons.Warn, p.palette.Warning) + p.types.Body.Render(text) + "\n"
+// WarnRow returns a warning row with icon.
+func (pr *Printer) WarnRow(text string) string {
+	return pr.styledIconLine(pr.icons.Warn, pr.palette.Warning) + pr.types.Body.Render(text) + "\n"
 }
 
-func (p *Printer) ErrorRow(text string) string {
-	return p.styledIconLine(p.icons.Error, p.palette.Error) + p.types.Body.Render(text) + "\n"
+// ErrorRow returns an error row with icon.
+func (pr *Printer) ErrorRow(text string) string {
+	return pr.styledIconLine(pr.icons.Error, pr.palette.Error) + pr.types.Body.Render(text) + "\n"
 }
 
-func (p *Printer) Detail(text string) string {
-	return p.types.Muted.Render("    "+text) + "\n"
+// Detail returns indented muted text.
+func (pr *Printer) Detail(text string) string {
+	return pr.types.Muted.Render("    "+text) + "\n"
 }
 
-func (p *Printer) styledIconLine(icon string, color lipgloss.AdaptiveColor) string {
+func (pr *Printer) styledIconLine(icon string, color lipgloss.AdaptiveColor) string {
 	return lipgloss.NewStyle().Bold(true).Foreground(color).Render(icon) + " "
 }
 
-func (p *Printer) line(writer io.Writer, icon string, message string, iconColor lipgloss.AdaptiveColor) {
+func (pr *Printer) line(
+	writer io.Writer,
+	icon string,
+	message string,
+	iconColor lipgloss.AdaptiveColor,
+) {
 	styledIcon := lipgloss.NewStyle().Bold(true).Foreground(iconColor).Render(icon)
-	styledMsg := p.types.Body.Render(message)
+	styledMsg := pr.types.Body.Render(message)
+	//nolint:errcheck
 	fmt.Fprintf(writer, "%s %s\n", styledIcon, styledMsg)
 }

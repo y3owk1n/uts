@@ -1,3 +1,4 @@
+//nolint:mnd
 package util
 
 import (
@@ -7,14 +8,17 @@ import (
 	"strings"
 )
 
+// FileSize returns the size of the file at the given path.
 func FileSize(path string) int64 {
 	info, err := os.Stat(path)
 	if err != nil {
 		return 0
 	}
+
 	return info.Size()
 }
 
+// HumanSize formats a byte count as a human-readable string.
 func HumanSize(bytes int64) string {
 	switch {
 	case bytes < 1024:
@@ -22,36 +26,46 @@ func HumanSize(bytes int64) string {
 	case bytes < 1048576:
 		kb := bytes / 1024
 		frac := (bytes % 1024) * 10 / 1024
+
 		return fmt.Sprintf("%d.%d KB", kb, frac)
 	case bytes < 1073741824:
 		mb := bytes / 1048576
 		frac := (bytes % 1048576) * 10 / 1048576
+
 		return fmt.Sprintf("%d.%d MB", mb, frac)
 	default:
 		gb := bytes / 1073741824
 		rem := (bytes % 1073741824) * 100 / 1073741824
+
 		return fmt.Sprintf("%d.%d GB", gb, rem)
 	}
 }
 
+// CompressionRatio returns the compression ratio as a formatted string.
 func CompressionRatio(orig, compressed int64) string {
 	if orig == 0 {
 		return "0%"
 	}
+
 	pct := (orig - compressed) * 1000 / orig
 	whole := pct / 10
+
 	frac := pct % 10
 	if pct == 0 {
 		return "(0.0%)"
 	}
+
 	if pct < 0 {
 		whole = -whole
 		frac = -frac
+
 		return fmt.Sprintf("(+%d.%d%%)", whole, frac)
 	}
+
 	return fmt.Sprintf("(-%d.%d%%)", whole, frac)
 }
 
+// OutputPath generates an output path by inserting a suffix before the extension.
 func OutputPath(input, suffix string) string {
 	dir := filepath.Dir(input)
 	base := filepath.Base(input)
@@ -60,11 +74,14 @@ func OutputPath(input, suffix string) string {
 
 	if name == "" {
 		name = "." + ext[1:]
+
 		return filepath.Join(dir, name+"-"+suffix)
 	}
+
 	return filepath.Join(dir, name+"-"+suffix+ext)
 }
 
+// OutputPathExt generates an output path with a new extension.
 func OutputPathExt(input, suffix, newExt string) string {
 	dir := filepath.Dir(input)
 	base := filepath.Base(input)
@@ -73,9 +90,11 @@ func OutputPathExt(input, suffix, newExt string) string {
 	if name == "" {
 		return filepath.Join(dir, "."+newExt)
 	}
+
 	return filepath.Join(dir, name+"-"+suffix+"."+newExt)
 }
 
+// ConvertOutputPath converts a file path to a new extension.
 func ConvertOutputPath(input, targetExt string) string {
 	dir := filepath.Dir(input)
 	base := filepath.Base(input)
@@ -84,17 +103,22 @@ func ConvertOutputPath(input, targetExt string) string {
 	return filepath.Join(dir, name+"."+targetExt)
 }
 
+// MaybeInPlace renames the compressed file to the original if compression succeeded.
 func MaybeInPlace(compressed, original string) {
-	if inPlace, err := os.Stat(compressed); err == nil && inPlace != nil {
-		os.Rename(compressed, original)
+	inPlace, err := os.Stat(compressed)
+	if err == nil && inPlace != nil {
+		_ = os.Rename(compressed, original)
 	}
 }
 
+// FileExists reports whether the given path exists.
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
+
 	return err == nil
 }
 
+// ResolveGlobs resolves glob patterns and returns matching file paths.
 func ResolveGlobs(args []string, recursive bool) []string {
 	var result []string
 	for _, arg := range args {
@@ -103,18 +127,22 @@ func ResolveGlobs(args []string, recursive bool) []string {
 			if err != nil || len(matches) == 0 {
 				continue
 			}
+
 			result = append(result, matches...)
 		} else {
 			result = append(result, arg)
 		}
 	}
+
 	return result
 }
 
+// EnsureDir ensures the parent directory of the given path exists.
 func EnsureDir(path string) error {
 	dir := filepath.Dir(path)
 	if dir != "." && dir != "/" {
-		return os.MkdirAll(dir, 0755)
+		return os.MkdirAll(dir, 0o755)
 	}
+
 	return nil
 }

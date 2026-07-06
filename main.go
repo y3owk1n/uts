@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the uts CLI.
 package main
 
 import (
@@ -8,7 +9,8 @@ import (
 )
 
 func main() {
-	if err := cmd.Execute(); err != nil {
+	err := cmd.Execute()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

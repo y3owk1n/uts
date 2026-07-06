@@ -1,16 +1,17 @@
+//nolint:goconst
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/compress"
 	"github.com/y3owk1n/uts/internal/convert"
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 )
 
+// pdfCmd represents the PDF command.
 var pdfCmd = &cobra.Command{
 	Use:     "pdf",
 	Aliases: []string{"p"},
@@ -21,10 +22,11 @@ Conversions: PDF ↔ jpg/png images.`,
 	Example: `  uts pdf compress thesis.pdf -q low
   uts pdf convert report.pdf --to jpg`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
+// pdfCompressCmd represents the pdf compress command.
 var pdfCompressCmd = &cobra.Command{
 	Use:     "compress",
 	Aliases: []string{"c"},
@@ -39,6 +41,7 @@ Quality: high (300 DPI, /printer), medium (150 DPI, /ebook), low (72 DPI, /scree
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("compressing PDF files", "files", args)
+
 		return compress.PDF(compress.PDFOptions{
 			Files:     args,
 			Quality:   quality,
@@ -49,6 +52,7 @@ Quality: high (300 DPI, /printer), medium (150 DPI, /ebook), low (72 DPI, /scree
 	},
 }
 
+// pdfConvertCmd represents the pdf convert command.
 var pdfConvertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
@@ -64,9 +68,14 @@ images → PDF: combines images into a single PDF`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>. Examples: --to jpg, --to png, --to pdf")
+			return derrors.New(
+				derrors.CodeInvalidInput,
+				"missing --to <format>. Examples: --to jpg, --to png, --to pdf",
+			)
 		}
+
 		log.Debug("converting PDF files", "files", args, "target", targetFmt)
+
 		return convert.PDF(convert.PDFOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),

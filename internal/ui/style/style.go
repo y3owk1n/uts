@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Palette defines the color palette for the CLI.
 type Palette struct {
 	Primary lipgloss.AdaptiveColor
 	Text    lipgloss.AdaptiveColor
@@ -47,6 +48,7 @@ func basePalette() Palette {
 	}
 }
 
+// Default returns the default palette with optional env overrides.
 func Default() Palette {
 	palette := basePalette()
 	palette.Primary = overrideColor(palette.Primary, "PRIMARY")
@@ -58,6 +60,7 @@ func Default() Palette {
 	palette.Success = overrideColor(palette.Success, "SUCCESS")
 	palette.Warning = overrideColor(palette.Warning, "WARNING")
 	palette.Error = overrideColor(palette.Error, "ERROR")
+
 	return palette
 }
 
@@ -66,26 +69,33 @@ func overrideColor(color lipgloss.AdaptiveColor, name string) lipgloss.AdaptiveC
 		color.Light = v
 		color.Dark = v
 	}
+
 	if v, ok := envColor("UTS_COLOR_" + name + "_LIGHT"); ok {
 		color.Light = v
 	}
+
 	if v, ok := envColor("UTS_COLOR_" + name + "_DARK"); ok {
 		color.Dark = v
 	}
+
 	return color
 }
 
 func envColor(envName string) (string, bool) {
 	raw := strings.TrimSpace(os.Getenv(envName))
+
 	return raw, raw != ""
 }
 
+// ColorEnabled reports whether color output is enabled.
 func ColorEnabled() bool {
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		return false
 	}
+
 	if _, ok := os.LookupEnv("FORCE_COLOR"); ok {
 		return true
 	}
+
 	return lipgloss.DefaultRenderer().ColorProfile().Name() != "ascii"
 }

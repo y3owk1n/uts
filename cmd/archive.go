@@ -1,3 +1,6 @@
+// Package cmd contains the uts CLI.
+//
+//nolint:goconst
 package cmd
 
 import (
@@ -5,11 +8,11 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/archive"
 	"github.com/y3owk1n/uts/internal/compress"
 )
 
+// archiveCmd represents the archive command.
 var archiveCmd = &cobra.Command{
 	Use:     "archive",
 	Aliases: []string{"arc", "ar"},
@@ -22,10 +25,11 @@ Archive formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
   uts archive extract backup.zip
   uts archive list project.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
+// archiveCompressCmd represents the archive compress command.
 var archiveCompressCmd = &cobra.Command{
 	Use:     "compress",
 	Aliases: []string{"c"},
@@ -40,6 +44,7 @@ Output saved as <name>.tar.<algo> or <name>.zip.`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("compressing archives", "files", args, "algorithm", algorithm)
+
 		return compress.Archive(compress.ArchiveOptions{
 			Files:     args,
 			Algorithm: strings.ToLower(algorithm),
@@ -49,6 +54,7 @@ Output saved as <name>.tar.<algo> or <name>.zip.`,
 	},
 }
 
+// archiveExtractCmd represents the archive extract command.
 var archiveExtractCmd = &cobra.Command{
 	Use:     "extract",
 	Aliases: []string{"x"},
@@ -63,6 +69,7 @@ Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("extracting archives", "files", args)
+
 		return archive.Extract(archive.ExtractOptions{
 			Files:     args,
 			OutputDir: outputDir,
@@ -71,6 +78,7 @@ Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
 	},
 }
 
+// archiveListCmd represents the archive list command.
 var archiveListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
@@ -84,6 +92,7 @@ Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("listing archives", "files", args)
+
 		return archive.List(archive.ListOptions{
 			Files: args,
 		})

@@ -15,9 +15,11 @@ var (
 	algorithm string
 	targetFmt string
 
+	// Version is the current version of uts.
 	Version = "1.0.0"
 )
 
+// RootCmd is the root command for uts.
 var RootCmd = &cobra.Command{
 	Use:   "uts",
 	Short: "One CLI for every format",
@@ -36,17 +38,19 @@ Files are saved as <name>-small.<ext> by default. Use -i to replace in-place.`,
   uts info video.mp4`,
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
 
+// Execute runs the root command and returns any error.
 func Execute() error {
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if verbose {
 			log.SetLevel(log.DebugLevel)
 		}
+
 		return nil
 	}
 

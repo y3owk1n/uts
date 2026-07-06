@@ -1,16 +1,23 @@
+//nolint:mnd
 package compress
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
 
+var errImageMagick = derrors.New(derrors.CodeToolNotFound, "imagemagick not found")
+
+// ImageOptions represents options for image compression.
 type ImageOptions struct {
 	Files     []string
 	Quality   string
@@ -19,6 +26,7 @@ type ImageOptions struct {
 	DryRun    bool
 }
 
+// Image compresses image files using various tools.
 func Image(opts ImageOptions) error {
 	qualityVal, err := util.PresetVal(opts.Quality, 60, 80, 90)
 	if err != nil {
@@ -28,9 +36,10 @@ func Image(opts ImageOptions) error {
 	ui.Message.Infof("Image compression at %s quality (value=%d)", opts.Quality, qualityVal)
 	total := len(opts.Files)
 
-	for i, file := range opts.Files {
+	for idx, file := range opts.Files {
 		if !util.FileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
@@ -38,19 +47,32 @@ func Image(opts ImageOptions) error {
 		out := util.OutputPath(file, "small")
 		origSize := util.FileSize(file)
 
-		ui.Message.Stepf("[%d/%d] %s (%s)", i+1, total, file, util.HumanSize(origSize))
+		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
 
 		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would compress %s -> %s (format=%s, quality=%d)", file, out, ext, qualityVal)
+			ui.Message.Infof(
+				"[dry-run] Would compress %s -> %s (format=%s, quality=%d)",
+				file,
+				out,
+				ext,
+				qualityVal,
+			)
+
 			continue
 		}
 
-		util.EnsureDir(out)
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		sp.Start()
+		err := util.EnsureDir(out)
+		if err != nil {
+			ui.Message.Errorf("Failed to create output directory: %v", err)
 
-		compressOK := true
+			continue
+		}
+
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
+		spinner.Start()
+
+		var compressOK bool
 		switch ext {
 		case "png":
 			compressOK = compressPNG(file, out, qualityVal) == nil
@@ -70,15 +92,23 @@ func Image(opts ImageOptions) error {
 			compressOK = compressAVIF(file, out, qualityVal) == nil
 		default:
 			ui.Message.Warnf("Unsupported image format: %s — skipping %s", ext, file)
-			sp.Stop()
+			spinner.Stop()
+
 			continue
 		}
-		sp.Stop()
+
+		spinner.Stop()
 
 		if compressOK && util.FileExists(out) {
 			newSize := util.FileSize(out)
 			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf("%s: %s → %s %s", file, util.HumanSize(origSize), util.HumanSize(newSize), ratio)
+			ui.Message.Successf(
+				"%s: %s → %s %s",
+				file,
+				util.HumanSize(origSize),
+				util.HumanSize(newSize),
+				ratio,
+			)
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 		}
@@ -87,58 +117,81 @@ func Image(opts ImageOptions) error {
 	if total > 1 {
 		ui.Message.Successf("Compressed %d image files", total)
 	}
+
 	return nil
 }
 
 func compressPNG(file, out string, quality int) error {
 	if hasTool("pngquant") {
 		ui.Message.Mutedf("Using pngquant")
-		cmd := exec.Command("pngquant",
+
+		cmd := exec.CommandContext(context.Background(), "pngquant",
 			fmt.Sprintf("--quality=%d-%d", quality-10, quality),
 			"--speed", "1", "--strip", "--output", out, "--", file)
-		if err := cmd.Run(); err != nil {
+
+		err := cmd.Run()
+		if err != nil {
 			return err
 		}
+
 		if hasTool("optipng") && util.FileExists(out) {
 			ui.Message.Mutedf("Optimizing with optipng")
-			exec.Command("optipng", "-quiet", "-o2", out).Run()
+
+			_ = exec.CommandContext(context.Background(), "optipng", "-quiet", "-o2", out).Run()
 		}
+
 		return nil
 	}
+
 	if hasTool("optipng") {
 		ui.Message.Mutedf("Using optipng")
-		if err := copyFile(file, out); err != nil {
+
+		err := copyFile(file, out)
+		if err != nil {
 			return err
 		}
-		return exec.Command("optipng", "-quiet", "-o2", out).Run()
+
+		return exec.CommandContext(context.Background(), "optipng", "-quiet", "-o2", out).Run()
 	}
+
 	return magickCmd(file, out, quality)
 }
 
 func compressJPEG(file, out string, quality int) error {
 	if hasTool("jpegoptim") {
 		ui.Message.Mutedf("Using jpegoptim")
-		if err := copyFile(file, out); err != nil {
+
+		err := copyFile(file, out)
+		if err != nil {
 			return err
 		}
-		return exec.Command("jpegoptim", fmt.Sprintf("--max=%d", quality), "--strip-all", "--quiet", out).Run()
+
+		return exec.CommandContext(context.Background(), "jpegoptim", fmt.Sprintf("--max=%d", quality), "--strip-all", "--quiet", out).
+			Run()
 	}
+
 	return magickCmd(file, out, quality)
 }
 
 func compressWebP(file, out string, quality int) error {
 	if hasTool("cwebp") {
 		ui.Message.Mutedf("Using cwebp")
-		return exec.Command("cwebp", "-q", fmt.Sprintf("%d", quality), "-m", "6", file, "-o", out).Run()
+
+		return exec.CommandContext(context.Background(), "cwebp", "-q", strconv.Itoa(quality), "-m", "6", file, "-o", out).
+			Run()
 	}
+
 	return magickCmd(file, out, quality)
 }
 
 func compressGIF(file, out string) error {
 	if hasTool("gifsicle") {
 		ui.Message.Mutedf("Using gifsicle")
-		return exec.Command("gifsicle", "-O3", "--lossy=80", file, "-o", out).Run()
+
+		return exec.CommandContext(context.Background(), "gifsicle", "-O3", "--lossy=80", file, "-o", out).
+			Run()
 	}
+
 	return magickCmd(file, out, 80)
 }
 
@@ -149,35 +202,52 @@ func compressGeneric(file, out string, quality int) error {
 func compressHEIC(file, out string, quality int) error {
 	if hasTool("heif-convert") {
 		ui.Message.Mutedf("Using heif-convert")
-		return exec.Command("heif-convert", "-q", fmt.Sprintf("%d", quality), file, out).Run()
+
+		return exec.CommandContext(context.Background(), "heif-convert", "-q", strconv.Itoa(quality), file, out).
+			Run()
 	}
+
 	return magickCmd(file, out, quality)
 }
 
 func compressAVIF(file, out string, quality int) error {
 	if hasTool("cavif") {
 		ui.Message.Mutedf("Using cavif")
-		return exec.Command("cavif", "-q", fmt.Sprintf("%d", quality), "-s", "6", "-o", out, file).Run()
+
+		return exec.CommandContext(context.Background(), "cavif", "-q", strconv.Itoa(quality), "-s", "6", "-o", out, file).
+			Run()
 	}
+
 	if hasTool("avifenc") {
 		ui.Message.Mutedf("Using avifenc")
+
 		quantizer := (100 - quality) * 63 / 100
-		return exec.Command("avifenc", "--min", "0", "--max", fmt.Sprintf("%d", quantizer), "-s", "6", file, out).Run()
+
+		return exec.CommandContext(context.Background(), "avifenc", "--min", "0", "--max", strconv.Itoa(quantizer), "-s", "6", file, out).
+			Run()
 	}
+
 	return magickCmd(file, out, quality)
 }
 
 func magickCmd(input, output string, quality int) error {
 	if hasTool("magick") {
 		ui.Message.Mutedf("Using ImageMagick")
-		return exec.Command("magick", input, "-quality", fmt.Sprintf("%d", quality), "-strip", output).Run()
+
+		return exec.CommandContext(context.Background(), "magick", input, "-quality", strconv.Itoa(quality), "-strip", output).
+			Run()
 	}
+
 	if hasTool("convert") {
 		ui.Message.Mutedf("Using ImageMagick (convert)")
-		return exec.Command("convert", input, "-quality", fmt.Sprintf("%d", quality), "-strip", output).Run()
+
+		return exec.CommandContext(context.Background(), "convert", input, "-quality", strconv.Itoa(quality), "-strip", output).
+			Run()
 	}
+
 	ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
-	return fmt.Errorf("imagemagick not found")
+
+	return errImageMagick
 }
 
 func copyFile(src, dst string) error {
@@ -185,10 +255,12 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(dst, input, 0644)
+
+	return os.WriteFile(dst, input, 0o644)
 }
 
 func hasTool(name string) bool {
 	_, err := exec.LookPath(name)
+
 	return err == nil
 }

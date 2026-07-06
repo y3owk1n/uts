@@ -1,35 +1,40 @@
+//nolint:mnd
 package archive
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/y3owk1n/uts/internal/ui"
-	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
+// ExtractOptions represents options for archive extraction.
 type ExtractOptions struct {
 	Files     []string
 	OutputDir string
 	DryRun    bool
 }
 
+// ListOptions represents options for listing archive contents.
 type ListOptions struct {
 	Files []string
 }
 
+// Extract extracts archive files.
 func Extract(opts ExtractOptions) error {
 	for _, file := range opts.Files {
 		if !fileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file), "."))
+
 		outDir := opts.OutputDir
 		if outDir == "" {
 			outDir = "."
@@ -37,61 +42,84 @@ func Extract(opts ExtractOptions) error {
 
 		if opts.DryRun {
 			ui.Message.Infof("[dry-run] Would extract %s -> %s/", file, outDir)
+
 			continue
 		}
 
 		ui.Message.Stepf("Extracting %s → %s/", file, outDir)
-		os.MkdirAll(outDir, 0755)
+		_ = os.MkdirAll(outDir, 0o755)
 
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Extracting %s...", file))
-		sp.Start()
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Extracting %s...", file))
+		spinner.Start()
 
 		var err error
 		switch ext {
 		case "zip":
 			if !hasTool("unzip") {
-				sp.Stop()
+				spinner.Stop()
 				ui.Message.Errorf("unzip not found — install: brew install unzip")
+
 				continue
 			}
-			err = exec.Command("unzip", "-qo", file, "-d", outDir).Run()
+
+			err = exec.CommandContext(context.Background(), "unzip", "-qo", file, "-d", outDir).
+				Run()
 		case "tar":
-			err = exec.Command("tar", "xf", file, "-C", outDir).Run()
+			err = exec.CommandContext(context.Background(), "tar", "xf", file, "-C", outDir).Run()
 		case "gz", "tgz":
-			err = exec.Command("tar", "xzf", file, "-C", outDir).Run()
+			err = exec.CommandContext(context.Background(), "tar", "xzf", file, "-C", outDir).Run()
 		case "zst", "zstd":
 			if !hasTool("zstd") {
-				sp.Stop()
+				spinner.Stop()
 				ui.Message.Errorf("zstd not found — install: brew install zstd")
+
 				continue
 			}
-			decomp := exec.Command("zstd", "-d", file, "--force", "-o", file+".unpacked")
-			if err = decomp.Run(); err != nil {
-				sp.Stop()
+
+			decomp := exec.CommandContext(
+				context.Background(),
+				"zstd",
+				"-d",
+				file,
+				"--force",
+				"-o",
+				file+".unpacked",
+			)
+
+			err = decomp.Run()
+			if err != nil {
+				spinner.Stop()
 				ui.Message.Errorf("zstd decompression failed: %s", file)
+
 				continue
 			}
-			err = exec.Command("tar", "xf", file+".unpacked", "-C", outDir).Run()
-			os.Remove(file + ".unpacked")
+
+			err = exec.CommandContext(context.Background(), "tar", "xf", file+".unpacked", "-C", outDir).
+				Run()
+			_ = os.Remove(file + ".unpacked")
 		case "xz", "txz":
-			err = exec.Command("xz", "-dk", file).Run()
+			err = exec.CommandContext(context.Background(), "xz", "-dk", file).Run()
 			if err == nil {
-				err = exec.Command("tar", "xf", strings.TrimSuffix(file, ".xz"), "-C", outDir).Run()
-				os.Remove(strings.TrimSuffix(file, ".xz"))
+				err = exec.CommandContext(context.Background(), "tar", "xf", strings.TrimSuffix(file, ".xz"), "-C", outDir).
+					Run()
+				_ = os.Remove(strings.TrimSuffix(file, ".xz"))
 			}
 		case "bz2", "tbz2":
-			err = exec.Command("bunzip2", "-k", file).Run()
+			err = exec.CommandContext(context.Background(), "bunzip2", "-k", file).Run()
 			if err == nil {
-				err = exec.Command("tar", "xf", strings.TrimSuffix(file, ".bz2"), "-C", outDir).Run()
-				os.Remove(strings.TrimSuffix(file, ".bz2"))
+				err = exec.CommandContext(context.Background(), "tar", "xf", strings.TrimSuffix(file, ".bz2"), "-C", outDir).
+					Run()
+				_ = os.Remove(strings.TrimSuffix(file, ".bz2"))
 			}
 		default:
-			sp.Stop()
+			spinner.Stop()
 			ui.Message.Errorf("Unsupported archive: .%s", ext)
+
 			continue
 		}
-		sp.Stop()
+
+		spinner.Stop()
 
 		if err == nil {
 			ui.Message.Successf("Extracted: %s -> %s/", file, outDir)
@@ -99,74 +127,85 @@ func Extract(opts ExtractOptions) error {
 			ui.Message.Errorf("Extraction failed: %s", file)
 		}
 	}
+
 	return nil
 }
 
+// List lists the contents of archive files.
 func List(opts ListOptions) error {
-	palette := style.Default()
 	for _, file := range opts.Files {
 		if !fileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file), "."))
 		ui.Message.Stepf("Contents of %s:", file)
 
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Listing %s...", file))
-		sp.Start()
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Listing %s...", file))
+		spinner.Start()
 
-		var output []byte
-		var err error
+		var (
+			output []byte
+			err    error
+		)
 		switch ext {
 		case "zip":
 			if !hasTool("unzip") {
-				sp.Stop()
+				spinner.Stop()
 				ui.Message.Errorf("unzip not found — install: brew install unzip")
+
 				continue
 			}
-			output, err = exec.Command("unzip", "-l", file).Output()
+
+			output, err = exec.CommandContext(context.Background(), "unzip", "-l", file).Output()
 		case "tar":
-			output, err = exec.Command("tar", "tf", file).Output()
+			output, err = exec.CommandContext(context.Background(), "tar", "tf", file).Output()
 		case "gz", "tgz":
-			output, err = exec.Command("tar", "tzf", file).Output()
+			output, err = exec.CommandContext(context.Background(), "tar", "tzf", file).Output()
 		case "zst", "zstd":
 			if hasTool("zstd") {
-				output, err = exec.Command("zstd", "-dc", file).Output()
+				output, err = exec.CommandContext(context.Background(), "zstd", "-dc", file).
+					Output()
 			} else {
-				sp.Stop()
+				spinner.Stop()
 				ui.Message.Errorf("zstd not found — install: brew install zstd")
+
 				continue
 			}
 		case "xz", "txz":
-			output, err = exec.Command("xz", "-dc", file).Output()
+			output, err = exec.CommandContext(context.Background(), "xz", "-dc", file).Output()
 		case "bz2", "tbz2":
-			output, err = exec.Command("bzip2", "-dc", file).Output()
+			output, err = exec.CommandContext(context.Background(), "bzip2", "-dc", file).Output()
 		default:
-			sp.Stop()
+			spinner.Stop()
 			ui.Message.Errorf("Unsupported archive: .%s", ext)
+
 			continue
 		}
-		sp.Stop()
+
+		spinner.Stop()
 
 		if err == nil {
-			fmt.Print(lipgloss.NewStyle().
-				Foreground(palette.Text).
-				Render(string(output)) + "\n")
+			ui.Message.Mutedf("%s", string(output))
 		} else {
 			ui.Message.Errorf("Failed to list: %s", file)
 		}
 	}
+
 	return nil
 }
 
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
+
 	return err == nil
 }
 
 func hasTool(name string) bool {
 	_, err := exec.LookPath(name)
+
 	return err == nil
 }

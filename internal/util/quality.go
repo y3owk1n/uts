@@ -1,11 +1,18 @@
+//nolint:goconst,mnd
 package util
 
-import "fmt"
+import (
+	"fmt"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+)
+
+// PresetVal converts a quality preset name to its numeric value.
 func PresetVal(level string, low, med, high int) (int, error) {
 	if isNumeric(level) {
 		return parseInt(level), nil
 	}
+
 	switch level {
 	case "low":
 		return low, nil
@@ -14,13 +21,20 @@ func PresetVal(level string, low, med, high int) (int, error) {
 	case "high":
 		return high, nil
 	default:
-		return 0, fmt.Errorf("invalid quality: %s (use low, medium, high, or a number)", level)
+		return 0, derrors.Newf(
+			derrors.CodeInvalidInput,
+			"invalid quality: %s (use low, medium, high, or a number)",
+			level,
+		)
 	}
 }
 
-func VideoQuality(level string) (crf int, preset string, err error) {
+// VideoQuality converts a quality level to CRF and bitrate values.
+func VideoQuality(level string) (int, string, error) {
 	if isNumeric(level) {
-		crf = parseInt(level)
+		crf := parseInt(level)
+
+		var preset string
 		switch {
 		case crf < 18:
 			preset = "slow"
@@ -29,8 +43,10 @@ func VideoQuality(level string) (crf int, preset string, err error) {
 		default:
 			preset = "fast"
 		}
+
 		return crf, preset, nil
 	}
+
 	switch level {
 	case "low":
 		return 32, "fast", nil
@@ -39,25 +55,34 @@ func VideoQuality(level string) (crf int, preset string, err error) {
 	case "high":
 		return 23, "slow", nil
 	default:
-		return 0, "", fmt.Errorf("invalid quality: %s (use low, medium, high, or CRF 0-51)", level)
+		return 0, "", derrors.Newf(
+			derrors.CodeInvalidInput,
+			"invalid quality: %s (use low, medium, high, or CRF 0-51)",
+			level,
+		)
 	}
 }
 
+// AudioBitrate converts a quality level to an audio bitrate.
 func AudioBitrate(level string) (string, error) {
 	if isNumeric(level) {
 		return level + "k", nil
 	}
+
 	v, err := PresetVal(level, 96, 128, 192)
 	if err != nil {
 		return "", err
 	}
+
 	return fmt.Sprintf("%dk", v), nil
 }
 
+// PDFDPI converts a quality level to PDF DPI.
 func PDFDPI(level string) (int, string, error) {
 	if isNumeric(level) {
 		return parseInt(level), "", nil
 	}
+
 	switch level {
 	case "low":
 		return 150, "/screen", nil
@@ -66,26 +91,33 @@ func PDFDPI(level string) (int, string, error) {
 	case "high":
 		return 400, "/printer", nil
 	default:
-		return 0, "", fmt.Errorf("invalid quality: %s (use low, medium, high, or DPI)", level)
+		return 0, "", derrors.Newf(
+			derrors.CodeInvalidInput,
+			"invalid quality: %s (use low, medium, high, or DPI)",
+			level,
+		)
 	}
 }
 
-func isNumeric(s string) bool {
-	if s == "" {
+func isNumeric(str string) bool {
+	if str == "" {
 		return false
 	}
-	for _, c := range s {
+
+	for _, c := range str {
 		if c < '0' || c > '9' {
 			return false
 		}
 	}
+
 	return true
 }
 
-func parseInt(s string) int {
-	n := 0
-	for _, c := range s {
-		n = n*10 + int(c-'0')
+func parseInt(str string) int {
+	num := 0
+	for _, c := range str {
+		num = num*10 + int(c-'0')
 	}
-	return n
+
+	return num
 }

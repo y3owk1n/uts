@@ -1,3 +1,6 @@
+// Package banner contains functions for rendering styled banners.
+//
+//nolint:mnd
 package banner
 
 import (
@@ -5,6 +8,7 @@ import (
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
+// Logo renders the application logo with version.
 func Logo(palette style.Palette, version string) string {
 	mark := lipgloss.NewStyle().
 		Foreground(palette.Primary).
@@ -28,6 +32,7 @@ func Logo(palette style.Palette, version string) string {
 	return mark + wordmark + versionStyle + "\n" + tagline + "\n"
 }
 
+// Header renders a section header with underline.
 func Header(palette style.Palette, text string) string {
 	styled := lipgloss.NewStyle().
 		Bold(true).
@@ -41,6 +46,7 @@ func Header(palette style.Palette, text string) string {
 	return styled + "\n" + sep + "\n"
 }
 
+// Mark renders the application wordmark.
 func Mark(palette style.Palette) string {
 	return lipgloss.NewStyle().
 		Bold(true).
@@ -48,13 +54,15 @@ func Mark(palette style.Palette) string {
 		Render("uts")
 }
 
-func stringsRepeat(s string, count int) string {
+func stringsRepeat(str string, count int) string {
 	if count <= 0 {
 		return ""
 	}
-	out := make([]byte, 0, len(s)*count)
+
+	out := make([]byte, 0, len(str)*count)
 	for range count {
-		out = append(out, s...)
+		out = append(out, str...)
 	}
+
 	return string(out)
 }

@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/info"
 )
 
+// infoCmd represents the info command.
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show file info and suggestions",
@@ -28,6 +28,7 @@ EXAMPLES
 			Files:   args,
 			Version: Version,
 		})
+
 		return nil
 	},
 }

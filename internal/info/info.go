@@ -1,3 +1,6 @@
+// Package info provides file information display functionality.
+//
+//nolint:errcheck,goconst,mnd
 package info
 
 import (
@@ -12,24 +15,29 @@ import (
 	"github.com/y3owk1n/uts/internal/util"
 )
 
+// Options represents options for displaying file information.
 type Options struct {
 	Files   []string
 	Version string
 }
 
+// Show displays information about the given files.
 func Show(opts Options) {
-	fmt.Print(ui.Banner.Logo(opts.Version))
+	fmt.Fprint(os.Stdout, ui.Banner.Logo(opts.Version))
 
 	palette := ui.Style.Palette()
 
 	for _, file := range opts.Files {
-		fi, err := os.Stat(file)
+		fileInfo, err := os.Stat(file)
 		if err != nil {
 			ui.Message.Warnf("Cannot access: %s", file)
+
 			continue
 		}
-		if fi.IsDir() {
+
+		if fileInfo.IsDir() {
 			ui.Message.Warnf("Not a file: %s", file)
+
 			continue
 		}
 
@@ -38,6 +46,7 @@ func Show(opts Options) {
 		base := filepath.Base(file)
 
 		catColor := palette.Accent
+
 		category := classify(ext)
 		if category == "unknown" {
 			catColor = palette.Warning
@@ -57,10 +66,13 @@ func Show(opts Options) {
 
 		suggestions := suggestActions(ext, file)
 		if suggestions != "" {
-			body += "\n" + lipgloss.NewStyle().Foreground(palette.Subtle).Render("Suggestions") + "\n" + suggestions
+			body += "\n" + lipgloss.NewStyle().
+				Foreground(palette.Subtle).
+				Render("Suggestions") +
+				"\n" + suggestions
 		}
 
-		fmt.Print(ui.Panel.Section(ui.Message.Highlight(base), body))
+		fmt.Fprint(os.Stdout, ui.Panel.Section(ui.Message.Highlight(base), body))
 	}
 }
 
@@ -87,7 +99,7 @@ func toolHint(ext string) string {
 		case "gif":
 			return "gifsicle"
 		case "heic", "heif":
-			return "ImageMagick (HEIC → JPEG)"
+			return "ImageMagick (HEIC \u2192 JPEG)"
 		case "avif", "avifs":
 			return "cavif / libavif"
 		default:
@@ -113,7 +125,8 @@ func toolHint(ext string) string {
 			return "tar"
 		}
 	}
-	return "—"
+
+	return "\u2014"
 }
 
 func classify(ext string) string {
@@ -129,6 +142,7 @@ func classify(ext string) string {
 	case isArchive(ext):
 		return "archive"
 	}
+
 	return "unknown"
 }
 
@@ -137,16 +151,40 @@ func suggestActions(ext, file string) string {
 
 	switch {
 	case isVideo(ext):
-		lines = append(lines, detail("Compress", fmt.Sprintf("uts video compress %q [-q low|medium|high|<0-51>]", file)))
+		lines = append(
+			lines,
+			detail(
+				"Compress",
+				fmt.Sprintf("uts video compress %q [-q low|medium|high|<0-51>]", file),
+			),
+		)
 		lines = append(lines, detail("Convert", fmt.Sprintf("uts video convert %q --to mkv", file)))
 	case isImage(ext):
-		lines = append(lines, detail("Compress", fmt.Sprintf("uts image compress %q [-q low|medium|high|<1-100>]", file)))
-		lines = append(lines, detail("Convert", fmt.Sprintf("uts image convert %q --to webp", file)))
+		lines = append(
+			lines,
+			detail(
+				"Compress",
+				fmt.Sprintf("uts image compress %q [-q low|medium|high|<1-100>]", file),
+			),
+		)
+		lines = append(
+			lines,
+			detail("Convert", fmt.Sprintf("uts image convert %q --to webp", file)),
+		)
 	case isAudio(ext):
-		lines = append(lines, detail("Compress", fmt.Sprintf("uts audio compress %q [-q low|medium|high|<kbps>]", file)))
+		lines = append(
+			lines,
+			detail(
+				"Compress",
+				fmt.Sprintf("uts audio compress %q [-q low|medium|high|<kbps>]", file),
+			),
+		)
 		lines = append(lines, detail("Convert", fmt.Sprintf("uts audio convert %q --to mp3", file)))
 	case ext == "pdf":
-		lines = append(lines, detail("Compress", fmt.Sprintf("uts pdf compress %q [-q low|medium|high|<dpi>]", file)))
+		lines = append(
+			lines,
+			detail("Compress", fmt.Sprintf("uts pdf compress %q [-q low|medium|high|<dpi>]", file)),
+		)
 		lines = append(lines, detail("Convert", fmt.Sprintf("uts pdf convert %q --to jpg", file)))
 	case isArchive(ext):
 		lines = append(lines, detail("Extract", fmt.Sprintf("uts archive extract %q", file)))
@@ -158,8 +196,13 @@ func suggestActions(ext, file string) string {
 
 func detail(label, cmd string) string {
 	palette := ui.Style.Palette()
-	labelStyle := lipgloss.NewStyle().Foreground(palette.Accent).Width(10).Align(lipgloss.Right).Render
+	labelStyle := lipgloss.NewStyle().
+		Foreground(palette.Accent).
+		Width(10).
+		Align(lipgloss.Right).
+		Render
 	cmdStyle := lipgloss.NewStyle().Foreground(palette.Subtle).Render
+
 	return "    " + labelStyle(label+":") + "  " + cmdStyle(cmd) + "\n"
 }
 
@@ -168,6 +211,7 @@ func isVideo(ext string) bool {
 	case "mp4", "mov", "mkv", "avi", "webm", "m4v", "flv", "wmv":
 		return true
 	}
+
 	return false
 }
 
@@ -176,6 +220,7 @@ func isImage(ext string) bool {
 	case "png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff", "tif", "heic", "heif", "avif", "avifs":
 		return true
 	}
+
 	return false
 }
 
@@ -184,6 +229,7 @@ func isAudio(ext string) bool {
 	case "wav", "flac", "aac", "mp3", "m4a", "opus", "ogg", "wma":
 		return true
 	}
+
 	return false
 }
 
@@ -192,5 +238,6 @@ func isArchive(ext string) bool {
 	case "zip", "tar", "gz", "tgz", "zst", "zstd", "xz", "txz", "bz2", "tbz2", "7z":
 		return true
 	}
+
 	return false
 }

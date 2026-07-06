@@ -1,3 +1,6 @@
+// Package panel contains functions for rendering styled panels.
+//
+//nolint:mnd
 package panel
 
 import (
@@ -9,19 +12,23 @@ import (
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
+// DefaultMaxWidth is the default maximum panel width.
 const DefaultMaxWidth = 80
 
 func width() int {
-	w, _, err := term.GetSize(os.Stdout.Fd())
-	if err != nil || w <= 0 {
+	width, _, err := term.GetSize(os.Stdout.Fd())
+	if err != nil || width <= 0 {
 		return DefaultMaxWidth
 	}
-	if w < DefaultMaxWidth {
-		return w
+
+	if width < DefaultMaxWidth {
+		return width
 	}
+
 	return DefaultMaxWidth
 }
 
+// Panel renders a bordered panel with the given content.
 func Panel(palette style.Palette, content string) string {
 	outer := width()
 	frameWidth := outer - 2
@@ -35,6 +42,7 @@ func Panel(palette style.Palette, content string) string {
 	return styled.Render(content) + "\n"
 }
 
+// Section renders a section with title and content inside a bordered frame.
 func Section(palette style.Palette, title, content string) string {
 	outer := width()
 	frameWidth := outer - 2

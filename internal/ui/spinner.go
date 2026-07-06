@@ -14,6 +14,7 @@ import (
 
 const defaultSpinnerSpeed = 100 * time.Millisecond
 
+// Spinner represents a terminal spinner.
 type Spinner struct {
 	writer     io.Writer
 	model      spinner.Model
@@ -28,10 +29,12 @@ type Spinner struct {
 	started bool
 }
 
+// NewSpinner creates a new Spinner.
 func NewSpinner(writer io.Writer, speed time.Duration) *Spinner {
 	if writer == nil {
 		writer = os.Stdout
 	}
+
 	if speed <= 0 {
 		speed = defaultSpinnerSpeed
 	}
@@ -41,31 +44,34 @@ func NewSpinner(writer io.Writer, speed time.Duration) *Spinner {
 		spinner.WithStyle(lipgloss.NewStyle()),
 	)
 
-	s := &Spinner{
+	_spinner := &Spinner{
 		writer: writer,
 		model:  model,
 		speed:  speed,
 	}
 
 	if file, ok := writer.(*os.File); ok {
-		s.isTerminal = term.IsTerminal(file.Fd())
+		_spinner.isTerminal = term.IsTerminal(file.Fd())
 	}
 
-	return s
+	return _spinner
 }
 
+// SetPrefix sets the spinner prefix.
 func (s *Spinner) SetPrefix(prefix string) {
 	s.mu.Lock()
 	s.prefix = prefix
 	s.mu.Unlock()
 }
 
+// SetSuffix sets the spinner suffix.
 func (s *Spinner) SetSuffix(suffix string) {
 	s.mu.Lock()
 	s.suffix = suffix
 	s.mu.Unlock()
 }
 
+// Start starts the spinner animation.
 func (s *Spinner) Start() {
 	if !s.isTerminal {
 		return
@@ -74,8 +80,10 @@ func (s *Spinner) Start() {
 	s.mu.Lock()
 	if s.started {
 		s.mu.Unlock()
+
 		return
 	}
+
 	s.started = true
 	s.done = make(chan struct{})
 	s.mu.Unlock()
@@ -86,6 +94,7 @@ func (s *Spinner) Start() {
 	go s.run()
 }
 
+// Stop stops the spinner animation.
 func (s *Spinner) Stop() {
 	if !s.isTerminal {
 		return
@@ -94,14 +103,17 @@ func (s *Spinner) Stop() {
 	s.mu.Lock()
 	if !s.started {
 		s.mu.Unlock()
+
 		return
 	}
+
 	s.started = false
 	close(s.done)
 	s.mu.Unlock()
 
 	s.wg.Wait()
 
+	//nolint:errcheck
 	fmt.Fprint(s.writer, "\r\033[K")
 }
 
@@ -131,5 +143,6 @@ func (s *Spinner) writeFrame() {
 	updated, _ := s.model.Update(spinner.TickMsg{Time: time.Now(), ID: s.model.ID()})
 	s.model = updated
 
+	//nolint:errcheck
 	fmt.Fprintf(s.writer, "\r\033[K%s%s %s", prefix, frame, suffix)
 }

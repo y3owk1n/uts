@@ -1,3 +1,4 @@
+//nolint:testpackage,goconst
 package util
 
 import (
@@ -6,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestHumanSize tests HumanSize.
 func TestHumanSize(t *testing.T) {
 	tests := []struct {
 		input int64
@@ -19,14 +21,15 @@ func TestHumanSize(t *testing.T) {
 		{1572864, "1.5 MB"},
 		{1073741824, "1.0 GB"},
 	}
-	for _, tt := range tests {
-		got := HumanSize(tt.input)
-		if got != tt.want {
-			t.Errorf("HumanSize(%d) = %q; want %q", tt.input, got, tt.want)
+	for _, tc := range tests {
+		got := HumanSize(tc.input)
+		if got != tc.want {
+			t.Errorf("HumanSize(%d) = %q; want %q", tc.input, got, tc.want)
 		}
 	}
 }
 
+// TestCompressionRatio tests CompressionRatio.
 func TestCompressionRatio(t *testing.T) {
 	tests := []struct {
 		orig, comp int64
@@ -37,14 +40,15 @@ func TestCompressionRatio(t *testing.T) {
 		{1000, 1300, "(+30.0%)"},
 		{0, 100, "0%"},
 	}
-	for _, tt := range tests {
-		got := CompressionRatio(tt.orig, tt.comp)
-		if got != tt.want {
-			t.Errorf("CompressionRatio(%d, %d) = %q; want %q", tt.orig, tt.comp, got, tt.want)
+	for _, tc := range tests {
+		got := CompressionRatio(tc.orig, tc.comp)
+		if got != tc.want {
+			t.Errorf("CompressionRatio(%d, %d) = %q; want %q", tc.orig, tc.comp, got, tc.want)
 		}
 	}
 }
 
+// TestOutputPath tests OutputPath.
 func TestOutputPath(t *testing.T) {
 	tests := []struct {
 		input, suffix, want string
@@ -53,97 +57,125 @@ func TestOutputPath(t *testing.T) {
 		{"photo.png", "small", "photo-small.png"},
 		{".hidden", "small", ".hidden-small"},
 	}
-	for _, tt := range tests {
-		got := OutputPath(tt.input, tt.suffix)
-		if got != tt.want {
-			t.Errorf("OutputPath(%q, %q) = %q; want %q", tt.input, tt.suffix, got, tt.want)
+	for _, tc := range tests {
+		got := OutputPath(tc.input, tc.suffix)
+		if got != tc.want {
+			t.Errorf("OutputPath(%q, %q) = %q; want %q", tc.input, tc.suffix, got, tc.want)
 		}
 	}
 }
 
+// TestOutputPathExt tests OutputPathExt.
 func TestOutputPathExt(t *testing.T) {
 	got := OutputPathExt("/dir/track.wav", "small", "m4a")
+
 	want := "/dir/track-small.m4a"
 	if got != want {
 		t.Errorf("OutputPathExt = %q; want %q", got, want)
 	}
 }
 
+// TestConvertOutputPath tests ConvertOutputPath.
 func TestConvertOutputPath(t *testing.T) {
 	got := ConvertOutputPath("photo.heic", "jpg")
+
 	want := "photo.jpg"
 	if got != want {
 		t.Errorf("ConvertOutputPath = %q; want %q", got, want)
 	}
 }
 
+// TestFileSize tests FileSize.
 func TestFileSize(t *testing.T) {
-	f := t.TempDir() + "/test.bin"
-	if err := os.WriteFile(f, []byte("hello world"), 0644); err != nil {
+	file := t.TempDir() + "/test.bin"
+
+	err := os.WriteFile(file, []byte("hello world"), 0o644)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if got := FileSize(f); got != 11 {
+
+	if got := FileSize(file); got != 11 {
 		t.Errorf("FileSize = %d; want 11", got)
 	}
+
 	if got := FileSize("/nonexistent"); got != 0 {
 		t.Errorf("FileSize(nonexistent) = %d; want 0", got)
 	}
 }
 
+// TestFileExists tests FileExists.
 func TestFileExists(t *testing.T) {
-	f := t.TempDir() + "/exists.txt"
-	os.WriteFile(f, []byte("x"), 0644)
-	if !FileExists(f) {
-		t.Errorf("FileExists(%q) = false; want true", f)
+	file := t.TempDir() + "/exists.txt"
+	//nolint:errcheck
+	os.WriteFile(file, []byte("x"), 0o644)
+
+	if !FileExists(file) {
+		t.Errorf("FileExists(%q) = false; want true", file)
 	}
+
 	if FileExists("/nonexistent") {
 		t.Errorf("FileExists(nonexistent) = true; want false")
 	}
 }
 
+// TestResolveGlobs tests ResolveGlobs.
 func TestResolveGlobs(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "a.txt"), nil, 0644)
-	os.WriteFile(filepath.Join(dir, "b.txt"), nil, 0644)
-	os.WriteFile(filepath.Join(dir, "c.go"), nil, 0644)
+	//nolint:errcheck
+	os.WriteFile(filepath.Join(dir, "a.txt"), nil, 0o644)
+	//nolint:errcheck
+	os.WriteFile(filepath.Join(dir, "b.txt"), nil, 0o644)
+	//nolint:errcheck
+	os.WriteFile(filepath.Join(dir, "c.go"), nil, 0o644)
 
 	tests := []struct {
-		args    []string
-		want    int
+		args []string
+		want int
 	}{
 		{[]string{filepath.Join(dir, "*.txt")}, 2},
 		{[]string{filepath.Join(dir, "*.go")}, 1},
 		{[]string{filepath.Join(dir, "*.py")}, 0},
 		{[]string{filepath.Join(dir, "a.txt")}, 1},
 	}
-	for _, tt := range tests {
-		got := ResolveGlobs(tt.args, false)
-		if len(got) != tt.want {
-			t.Errorf("ResolveGlobs(%v) = %d results; want %d", tt.args, len(got), tt.want)
+	for _, tc := range tests {
+		got := ResolveGlobs(tc.args, false)
+		if len(got) != tc.want {
+			t.Errorf("ResolveGlobs(%v) = %d results; want %d", tc.args, len(got), tc.want)
 		}
 	}
 }
 
+// TestEnsureDir tests EnsureDir.
 func TestEnsureDir(t *testing.T) {
 	base := t.TempDir()
+
 	path := filepath.Join(base, "a", "b", "c", "file.txt")
-	if err := EnsureDir(path); err != nil {
+
+	err := EnsureDir(path)
+	if err != nil {
 		t.Fatalf("EnsureDir: %v", err)
 	}
-	if _, err := os.Stat(filepath.Dir(path)); os.IsNotExist(err) {
+
+	_, err = os.Stat(filepath.Dir(path))
+
+	if os.IsNotExist(err) {
 		t.Error("EnsureDir did not create parent directory")
 	}
 }
 
+// TestMaybeInPlace tests MaybeInPlace.
 func TestMaybeInPlace(t *testing.T) {
 	dir := t.TempDir()
 	orig := filepath.Join(dir, "original.txt")
 	comp := filepath.Join(dir, "compressed.txt")
-	os.WriteFile(orig, nil, 0644)
+
+	//nolint:errcheck
+	os.WriteFile(orig, nil, 0o644)
 	MaybeInPlace(comp, orig)
-	if _, err := os.Stat(orig); os.IsNotExist(err) {
+
+	_, err := os.Stat(orig)
+
+	if os.IsNotExist(err) {
 		t.Error("MaybeInPlace should not rename when compressed doesn't exist")
 	}
 }
-
-

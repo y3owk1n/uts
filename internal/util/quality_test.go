@@ -1,9 +1,11 @@
+//nolint:goconst,testpackage
 package util
 
 import (
 	"testing"
 )
 
+// TestPresetVal tests PresetVal.
 func TestPresetVal(t *testing.T) {
 	tests := []struct {
 		level  string
@@ -19,17 +21,19 @@ func TestPresetVal(t *testing.T) {
 		{"75", 60, 80, 90, 75, false},
 		{"invalid", 60, 80, 90, 0, true},
 	}
-	for _, tt := range tests {
-		got, err := PresetVal(tt.level, tt.low, tt.medium, tt.high)
-		if (err != nil) != tt.err {
-			t.Errorf("PresetVal(%q) error = %v; want error=%v", tt.level, err, tt.err)
+	for _, testCase := range tests {
+		got, err := PresetVal(testCase.level, testCase.low, testCase.medium, testCase.high)
+		if (err != nil) != testCase.err {
+			t.Errorf("PresetVal(%q) error = %v; want error=%v", testCase.level, err, testCase.err)
 		}
-		if got != tt.want {
-			t.Errorf("PresetVal(%q) = %d; want %d", tt.level, got, tt.want)
+
+		if got != testCase.want {
+			t.Errorf("PresetVal(%q) = %d; want %d", testCase.level, got, testCase.want)
 		}
 	}
 }
 
+// TestPresetValEmpty tests PresetVal with an empty string.
 func TestPresetValEmpty(t *testing.T) {
 	_, err := PresetVal("", 60, 80, 90)
 	if err == nil {
@@ -37,6 +41,7 @@ func TestPresetValEmpty(t *testing.T) {
 	}
 }
 
+// TestVideoQuality tests VideoQuality.
 func TestVideoQuality(t *testing.T) {
 	tests := []struct {
 		level    string
@@ -52,17 +57,31 @@ func TestVideoQuality(t *testing.T) {
 		{"30", 30, "fast", false},
 		{"invalid", 0, "", true},
 	}
-	for _, tt := range tests {
-		crf, preset, err := VideoQuality(tt.level)
-		if (err != nil) != tt.err {
-			t.Errorf("VideoQuality(%q) error = %v; want error=%v", tt.level, err, tt.err)
+	for _, testCase := range tests {
+		crf, preset, err := VideoQuality(testCase.level)
+		if (err != nil) != testCase.err {
+			t.Errorf(
+				"VideoQuality(%q) error = %v; want error=%v",
+				testCase.level,
+				err,
+				testCase.err,
+			)
 		}
-		if crf != tt.wantCRF || preset != tt.wantPres {
-			t.Errorf("VideoQuality(%q) = (%d, %q); want (%d, %q)", tt.level, crf, preset, tt.wantCRF, tt.wantPres)
+
+		if crf != testCase.wantCRF || preset != testCase.wantPres {
+			t.Errorf(
+				"VideoQuality(%q) = (%d, %q); want (%d, %q)",
+				testCase.level,
+				crf,
+				preset,
+				testCase.wantCRF,
+				testCase.wantPres,
+			)
 		}
 	}
 }
 
+// TestAudioBitrate tests AudioBitrate.
 func TestAudioBitrate(t *testing.T) {
 	tests := []struct {
 		level string
@@ -75,23 +94,30 @@ func TestAudioBitrate(t *testing.T) {
 		{"256", "256k", false},
 		{"invalid", "", true},
 	}
-	for _, tt := range tests {
-		got, err := AudioBitrate(tt.level)
-		if (err != nil) != tt.err {
-			t.Errorf("AudioBitrate(%q) error = %v; want error=%v", tt.level, err, tt.err)
+	for _, testCase := range tests {
+		got, err := AudioBitrate(testCase.level)
+		if (err != nil) != testCase.err {
+			t.Errorf(
+				"AudioBitrate(%q) error = %v; want error=%v",
+				testCase.level,
+				err,
+				testCase.err,
+			)
 		}
-		if got != tt.want {
-			t.Errorf("AudioBitrate(%q) = %q; want %q", tt.level, got, tt.want)
+
+		if got != testCase.want {
+			t.Errorf("AudioBitrate(%q) = %q; want %q", testCase.level, got, testCase.want)
 		}
 	}
 }
 
+// TestPDFDPI tests PDFDPI.
 func TestPDFDPI(t *testing.T) {
 	tests := []struct {
-		level  string
-		want   int
-		wantS  string
-		err    bool
+		level string
+		want  int
+		wantS string
+		err   bool
 	}{
 		{"low", 150, "/screen", false},
 		{"medium", 300, "/ebook", false},
@@ -99,13 +125,21 @@ func TestPDFDPI(t *testing.T) {
 		{"200", 200, "", false},
 		{"invalid", 0, "", true},
 	}
-	for _, tt := range tests {
-		dpi, settings, err := PDFDPI(tt.level)
-		if (err != nil) != tt.err {
-			t.Errorf("PDFDPI(%q) error = %v; want error=%v", tt.level, err, tt.err)
+	for _, testCase := range tests {
+		dpi, settings, err := PDFDPI(testCase.level)
+		if (err != nil) != testCase.err {
+			t.Errorf("PDFDPI(%q) error = %v; want error=%v", testCase.level, err, testCase.err)
 		}
-		if dpi != tt.want || settings != tt.wantS {
-			t.Errorf("PDFDPI(%q) = (%d, %q); want (%d, %q)", tt.level, dpi, settings, tt.want, tt.wantS)
+
+		if dpi != testCase.want || settings != testCase.wantS {
+			t.Errorf(
+				"PDFDPI(%q) = (%d, %q); want (%d, %q)",
+				testCase.level,
+				dpi,
+				settings,
+				testCase.want,
+				testCase.wantS,
+			)
 		}
 	}
 }

@@ -1,14 +1,15 @@
+//nolint:goconst
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/convert"
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 )
 
+// convertCmd represents the convert command.
 var convertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
@@ -21,10 +22,11 @@ Requires --to <format> flag to specify the target format.`,
   uts convert audio track.wav --to mp3 -q 96
   uts convert pdf report.pdf --to jpg`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
+// convertImageCmd represents the convert image command.
 var convertImageCmd = &cobra.Command{
 	Use:     "image",
 	Aliases: []string{"img", "i"},
@@ -38,8 +40,9 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>")
+			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
 		}
+
 		return convert.Image(convert.ImageOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),
@@ -51,6 +54,7 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	},
 }
 
+// convertVideoCmd represents the convert video command.
 var convertVideoCmd = &cobra.Command{
 	Use:     "video",
 	Aliases: []string{"v"},
@@ -63,8 +67,9 @@ Target formats: mp4, mkv, webm, mov, avi, flv`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>")
+			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
 		}
+
 		return convert.Video(convert.VideoOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),
@@ -75,6 +80,7 @@ Target formats: mp4, mkv, webm, mov, avi, flv`,
 	},
 }
 
+// convertAudioCmd represents the convert audio command.
 var convertAudioCmd = &cobra.Command{
 	Use:     "audio",
 	Aliases: []string{"a"},
@@ -87,8 +93,9 @@ Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>")
+			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
 		}
+
 		return convert.Audio(convert.AudioOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),
@@ -99,6 +106,7 @@ Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	},
 }
 
+// convertPDFCmd represents the convert PDF command.
 var convertPDFCmd = &cobra.Command{
 	Use:     "pdf",
 	Aliases: []string{"p"},
@@ -111,8 +119,9 @@ Target formats: jpg, png (PDF→images), pdf (images→PDF)`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>")
+			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
 		}
+
 		return convert.PDF(convert.PDFOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),

@@ -1,16 +1,17 @@
+//nolint:goconst
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/compress"
 	"github.com/y3owk1n/uts/internal/convert"
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 )
 
+// audioCmd represents the audio command.
 var audioCmd = &cobra.Command{
 	Use:     "audio",
 	Aliases: []string{"a"},
@@ -22,10 +23,11 @@ Output formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Example: `  uts audio compress podcast.wav -q low
   uts audio convert track.wav --to mp3`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
+// audioCompressCmd represents the audio compress command.
 var audioCompressCmd = &cobra.Command{
 	Use:     "compress",
 	Aliases: []string{"c"},
@@ -41,6 +43,7 @@ Output saved as <name>-small.m4a.`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("compressing audio files", "files", args)
+
 		return compress.Audio(compress.AudioOptions{
 			Files:     args,
 			Quality:   quality,
@@ -51,6 +54,7 @@ Output saved as <name>-small.m4a.`,
 	},
 }
 
+// audioConvertCmd represents the audio convert command.
 var audioConvertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
@@ -65,9 +69,14 @@ Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>. Examples: --to mp3, --to wav, --to flac, --to aac")
+			return derrors.New(
+				derrors.CodeInvalidInput,
+				"missing --to <format>. Examples: --to mp3, --to wav, --to flac, --to aac",
+			)
 		}
+
 		log.Debug("converting audio files", "files", args, "target", targetFmt)
+
 		return convert.Audio(convert.AudioOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),

@@ -1,6 +1,8 @@
+//nolint:goconst
 package convert
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -9,6 +11,7 @@ import (
 	"github.com/y3owk1n/uts/internal/util"
 )
 
+// AudioOptions represents options for audio conversion.
 type AudioOptions struct {
 	Files     []string
 	Target    string
@@ -17,11 +20,14 @@ type AudioOptions struct {
 	DryRun    bool
 }
 
+// Audio converts audio files to the target format.
 func Audio(opts AudioOptions) error {
 	target := strings.ToLower(opts.Target)
+
 	codec, extHint := audioCodec(target)
 	if codec == "" {
 		ui.Message.Errorf("Unsupported target format: .%s", target)
+
 		return nil
 	}
 
@@ -33,42 +39,60 @@ func Audio(opts AudioOptions) error {
 	ui.Message.Infof("Converting audio to .%s (%s, %s)", extHint, codec, bitrate)
 
 	total := len(opts.Files)
-	for i, file := range opts.Files {
+	for idx, file := range opts.Files {
 		if !util.FileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
 		if strings.HasSuffix(strings.ToLower(file), "."+extHint) {
 			ui.Message.Warnf("Already .%s, skipping: %s", extHint, file)
+
 			continue
 		}
 
 		out := util.ConvertOutputPath(file, extHint)
 		origSize := util.FileSize(file)
 
-		ui.Message.Stepf("[%d/%d] %s → .%s (%s)", i+1, total, file, extHint, util.HumanSize(origSize))
+		ui.Message.Stepf(
+			"[%d/%d] %s → .%s (%s)",
+			idx+1,
+			total,
+			file,
+			extHint,
+			util.HumanSize(origSize),
+		)
 
 		if opts.DryRun {
 			ui.Message.Infof("[dry-run] Would convert %s -> %s", file, out)
+
 			continue
 		}
 
-		util.EnsureDir(out)
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Converting %s...", file))
-		sp.Start()
+		_ = util.EnsureDir(out)
 
-		output, err := exec.Command("ffmpeg",
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Converting %s...", file))
+		spinner.Start()
+
+		output, err := exec.CommandContext(
+			context.Background(), "ffmpeg",
 			"-i", file,
 			"-c:a", codec,
 			"-b:a", bitrate,
 			"-y", out,
 		).CombinedOutput()
-		sp.Stop()
+
+		spinner.Stop()
 
 		if err == nil && util.FileExists(out) {
-			ui.Message.Successf("%s: %s → %s", file, util.HumanSize(origSize), util.HumanSize(util.FileSize(out)))
+			ui.Message.Successf(
+				"%s: %s → %s",
+				file,
+				util.HumanSize(origSize),
+				util.HumanSize(util.FileSize(out)),
+			)
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))
@@ -78,6 +102,7 @@ func Audio(opts AudioOptions) error {
 	if total > 1 {
 		ui.Message.Successf("Converted %d audio files", total)
 	}
+
 	return nil
 }
 
@@ -96,5 +121,6 @@ func audioCodec(target string) (string, string) {
 	case "ogg":
 		return "libvorbis", "ogg"
 	}
+
 	return "", ""
 }

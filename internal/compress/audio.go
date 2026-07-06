@@ -1,15 +1,15 @@
 package compress
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
 
+// AudioOptions represents options for audio compression.
 type AudioOptions struct {
 	Files     []string
 	Quality   string
@@ -18,48 +18,70 @@ type AudioOptions struct {
 	DryRun    bool
 }
 
+// Audio compresses audio files using ffmpeg.
 func Audio(opts AudioOptions) error {
 	bitrate, err := util.AudioBitrate(opts.Quality)
 	if err != nil {
 		return err
 	}
 
-	ui.Message.Infof("Audio compression at %s quality (bitrate=%s, codec=aac)", opts.Quality, bitrate)
+	ui.Message.Infof(
+		"Audio compression at %s quality (bitrate=%s, codec=aac)",
+		opts.Quality,
+		bitrate,
+	)
 	total := len(opts.Files)
 
-	for i, file := range opts.Files {
+	for idx, file := range opts.Files {
 		if !util.FileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
 		out := util.OutputPathExt(file, "small", "m4a")
 		origSize := util.FileSize(file)
 
-		ui.Message.Stepf("[%d/%d] %s (%s)", i+1, total, file, util.HumanSize(origSize))
+		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
 
 		if opts.DryRun {
 			ui.Message.Infof("[dry-run] Would compress %s -> %s (bitrate=%s)", file, out, bitrate)
+
 			continue
 		}
 
-		util.EnsureDir(out)
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		sp.Start()
+		err := util.EnsureDir(out)
+		if err != nil {
+			ui.Message.Errorf("Failed to create output directory: %v", err)
 
-		output, err := exec.Command("ffmpeg",
+			continue
+		}
+
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
+		spinner.Start()
+
+		cmd := exec.CommandContext(
+			context.Background(), "ffmpeg",
 			"-i", file,
 			"-c:a", "aac",
 			"-b:a", bitrate,
 			"-y", out,
-		).CombinedOutput()
-		sp.Stop()
+		)
+		output, err := cmd.CombinedOutput()
+
+		spinner.Stop()
 
 		if err == nil && util.FileExists(out) {
 			newSize := util.FileSize(out)
 			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf("%s: %s → %s %s", file, util.HumanSize(origSize), util.HumanSize(newSize), ratio)
+			ui.Message.Successf(
+				"%s: %s → %s %s",
+				file,
+				util.HumanSize(origSize),
+				util.HumanSize(newSize),
+				ratio,
+			)
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))
@@ -69,29 +91,6 @@ func Audio(opts AudioOptions) error {
 	if total > 1 {
 		ui.Message.Successf("Compressed %d audio files", total)
 	}
+
 	return nil
-}
-
-func isAudio(ext string) bool {
-	switch strings.ToLower(ext) {
-	case "wav", "flac", "aac", "mp3", "m4a", "opus", "ogg", "wma":
-		return true
-	}
-	return false
-}
-
-func isVideo(ext string) bool {
-	switch strings.ToLower(ext) {
-	case "mp4", "mov", "mkv", "avi", "webm", "m4v", "flv", "wmv":
-		return true
-	}
-	return false
-}
-
-func isImage(ext string) bool {
-	switch strings.ToLower(filepath.Ext(ext)) {
-	case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tiff", ".tif", ".heic", ".heif", ".avif", ".avifs":
-		return true
-	}
-	return false
 }

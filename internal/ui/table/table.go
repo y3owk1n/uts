@@ -1,3 +1,4 @@
+//nolint:mnd
 package table
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
+// Table represents a formatted table.
 type Table struct {
 	headers []string
 	rows    [][]string
@@ -15,6 +17,7 @@ type Table struct {
 	wrap    bool
 }
 
+// New creates a new Table with the given headers.
 func New(headers ...string) *Table {
 	return &Table{
 		headers: headers,
@@ -22,80 +25,94 @@ func New(headers ...string) *Table {
 	}
 }
 
+// Row adds a row to the table.
 func (t *Table) Row(values ...string) *Table {
 	t.rows = append(t.rows, values)
+
 	return t
 }
 
+// Current sets the current (highlighted) row index.
 func (t *Table) Current(idx int) *Table {
 	t.current = idx
+
 	return t
 }
 
-func (t *Table) Width(w int) *Table {
-	t.width = w
+// Width sets the table width.
+func (t *Table) Width(width int) *Table {
+	t.width = width
+
 	return t
 }
 
-func (t *Table) Wrap(b bool) *Table {
-	t.wrap = b
+// Wrap sets whether to wrap cell content.
+func (t *Table) Wrap(wrap bool) *Table {
+	t.wrap = wrap
+
 	return t
 }
 
+// Render renders the table with the given palette.
 func (t *Table) Render(palette style.Palette) string {
 	if len(t.headers) == 0 || len(t.rows) == 0 {
 		return ""
 	}
 
 	colWidths := make([]int, len(t.headers))
-	for i, h := range t.headers {
-		colWidths[i] = len(h)
+	for idx, h := range t.headers {
+		colWidths[idx] = len(h)
 	}
+
 	for _, row := range t.rows {
-		for i, cell := range row {
-			if i < len(colWidths) && len(cell) > colWidths[i] {
-				colWidths[i] = len(cell)
+		for idx, cell := range row {
+			if idx < len(colWidths) && len(cell) > colWidths[idx] {
+				colWidths[idx] = len(cell)
 			}
 		}
 	}
 
 	line := strings.Repeat("─", t.width)
-	var b strings.Builder
+
+	var buf strings.Builder
 
 	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(palette.Primary)
-	b.WriteString(headerStyle.Render(strings.Join(t.headers, "  ")))
-	b.WriteString("\n")
-	b.WriteString(lipgloss.NewStyle().Foreground(palette.Border).Render(line))
-	b.WriteString("\n")
+	buf.WriteString(headerStyle.Render(strings.Join(t.headers, "  ")))
+	buf.WriteString("\n")
+	buf.WriteString(lipgloss.NewStyle().Foreground(palette.Border).Render(line))
+	buf.WriteString("\n")
 
-	for i, row := range t.rows {
+	for idx, row := range t.rows {
 		cells := make([]string, len(row))
-		for j, cell := range row {
-			if j < len(colWidths) {
-				cells[j] = fmtCell(cell, colWidths[j])
+		for jdx, cell := range row {
+			if jdx < len(colWidths) {
+				cells[jdx] = fmtCell(cell, colWidths[jdx])
 			} else {
-				cells[j] = cell
+				cells[jdx] = cell
 			}
 		}
+
 		rowStr := strings.Join(cells, "  ")
 
-		if i == t.current {
-			b.WriteString(lipgloss.NewStyle().
+		if idx == t.current {
+			buf.WriteString(lipgloss.NewStyle().
 				Foreground(palette.Primary).
 				Bold(true).
 				Render("▸ " + rowStr))
 		} else {
-			b.WriteString("  " + rowStr)
+			buf.WriteString("  " + rowStr)
 		}
-		b.WriteString("\n")
+
+		buf.WriteString("\n")
 	}
 
-	return b.String()
+	return buf.String()
 }
 
-func fmtCell(s string, width int) string {
-	if len(s) >= width {
-		return s
+func fmtCell(str string, width int) string {
+	if len(str) >= width {
+		return str
 	}
-	return s + strings.Repeat(" ", width-len(s))
+
+	return str + strings.Repeat(" ", width-len(str))
 }

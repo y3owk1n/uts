@@ -1,3 +1,6 @@
+// Package main is the entrypoint for the genman CLI.
+//
+//nolint:mnd
 package main
 
 import (
@@ -7,7 +10,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra/doc"
-
 	"github.com/y3owk1n/uts/cmd"
 )
 
@@ -19,7 +21,7 @@ func main() {
 
 	outputDir := os.Args[1]
 
-	err := os.MkdirAll(outputDir, 0755)
+	err := os.MkdirAll(outputDir, 0o755)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
@@ -47,5 +49,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Man pages generated in %s/\n", outputDir)
+	fmt.Printf("Man pages generated in %s/\n", outputDir) //nolint:forbidigo
 }

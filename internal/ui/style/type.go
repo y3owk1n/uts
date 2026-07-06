@@ -2,8 +2,10 @@ package style
 
 import "github.com/charmbracelet/lipgloss"
 
+// KeyColumnWidth is the default width for key columns.
 const KeyColumnWidth = 14
 
+// Type defines a set of text styles for different message types.
 type Type struct {
 	Title   lipgloss.Style
 	Section lipgloss.Style
@@ -14,6 +16,7 @@ type Type struct {
 	Key     lipgloss.Style
 }
 
+// Types returns a Type set styled with the given palette.
 func Types(palette Palette) Type {
 	return Type{
 		Title: lipgloss.NewStyle().

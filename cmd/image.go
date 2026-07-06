@@ -1,16 +1,17 @@
+//nolint:goconst
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
-
 	"github.com/y3owk1n/uts/internal/compress"
 	"github.com/y3owk1n/uts/internal/convert"
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 )
 
+// imageCmd represents the image command.
 var imageCmd = &cobra.Command{
 	Use:     "image",
 	Aliases: []string{"img", "i"},
@@ -22,10 +23,11 @@ Output formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	Example: `  uts image compress screenshot.png -q medium
   uts image convert photo.heic --to jpg`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
+// imageCompressCmd represents the image compress command.
 var imageCompressCmd = &cobra.Command{
 	Use:     "compress",
 	Aliases: []string{"c"},
@@ -44,6 +46,7 @@ HEIC files are converted to JPEG.`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("compressing image files", "files", args)
+
 		return compress.Image(compress.ImageOptions{
 			Files:     args,
 			Quality:   quality,
@@ -54,6 +57,7 @@ HEIC files are converted to JPEG.`,
 	},
 }
 
+// imageConvertCmd represents the image convert command.
 var imageConvertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
@@ -68,9 +72,14 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			return fmt.Errorf("missing --to <format>. Examples: --to jpg, --to webp, --to png")
+			return derrors.New(
+				derrors.CodeInvalidInput,
+				"missing --to <format>. Examples: --to jpg, --to webp, --to png",
+			)
 		}
+
 		log.Debug("converting image files", "files", args, "target", targetFmt)
+
 		return convert.Image(convert.ImageOptions{
 			Files:     args,
 			Target:    strings.ToLower(targetFmt),

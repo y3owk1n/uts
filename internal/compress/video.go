@@ -1,13 +1,16 @@
 package compress
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
+	"strconv"
 
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
 
+// VideoOptions represents options for video compression.
 type VideoOptions struct {
 	Files     []string
 	Quality   string
@@ -16,40 +19,61 @@ type VideoOptions struct {
 	DryRun    bool
 }
 
+// Video compresses video files using ffmpeg.
 func Video(opts VideoOptions) error {
 	crf, preset, err := util.VideoQuality(opts.Quality)
 	if err != nil {
 		return err
 	}
 
-	ui.Message.Infof("Video compression at %s quality (crf=%d, preset=%s)", opts.Quality, crf, preset)
+	ui.Message.Infof(
+		"Video compression at %s quality (crf=%d, preset=%s)",
+		opts.Quality,
+		crf,
+		preset,
+	)
 
 	total := len(opts.Files)
-	for i, file := range opts.Files {
+	for idx, file := range opts.Files {
 		if !util.FileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
+
 			continue
 		}
 
 		out := util.OutputPath(file, "small")
 		origSize := util.FileSize(file)
 
-		ui.Message.Stepf("[%d/%d] %s (%s)", i+1, total, file, util.HumanSize(origSize))
+		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
 
 		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would compress %s -> %s (crf=%d, preset=%s)", file, out, crf, preset)
+			ui.Message.Infof(
+				"[dry-run] Would compress %s -> %s (crf=%d, preset=%s)",
+				file,
+				out,
+				crf,
+				preset,
+			)
+
 			continue
 		}
 
-		util.EnsureDir(out)
-		sp := ui.NewSpinner(nil, 0)
-		sp.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		sp.Start()
+		err := util.EnsureDir(out)
+		if err != nil {
+			ui.Message.Errorf("Failed to create output directory: %v", err)
 
-		cmd := exec.Command("ffmpeg",
+			continue
+		}
+
+		spinner := ui.NewSpinner(nil, 0)
+		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
+		spinner.Start()
+
+		cmd := exec.CommandContext(
+			context.Background(), "ffmpeg",
 			"-i", file,
 			"-vcodec", "libx265",
-			"-crf", fmt.Sprintf("%d", crf),
+			"-crf", strconv.Itoa(crf),
 			"-preset", preset,
 			"-acodec", "aac",
 			"-b:a", "128k",
@@ -57,12 +81,19 @@ func Video(opts VideoOptions) error {
 			"-y", out,
 		)
 		output, err := cmd.CombinedOutput()
-		sp.Stop()
+
+		spinner.Stop()
 
 		if err == nil && util.FileExists(out) {
 			newSize := util.FileSize(out)
 			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf("%s: %s → %s %s", file, util.HumanSize(origSize), util.HumanSize(newSize), ratio)
+			ui.Message.Successf(
+				"%s: %s → %s %s",
+				file,
+				util.HumanSize(origSize),
+				util.HumanSize(newSize),
+				ratio,
+			)
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 			ui.Message.Mutedf("ffmpeg: %s", string(output))
@@ -72,5 +103,6 @@ func Video(opts VideoOptions) error {
 	if total > 1 {
 		ui.Message.Successf("Compressed %d video files", total)
 	}
+
 	return nil
 }
