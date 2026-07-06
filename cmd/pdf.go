@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -63,8 +64,7 @@ images → PDF: combines images into a single PDF`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>. Examples: --to jpg, --to png, --to pdf")
-			return nil
+			return fmt.Errorf("missing --to <format>. Examples: --to jpg, --to png, --to pdf")
 		}
 		log.Debug("converting PDF files", "files", args, "target", targetFmt)
 		return convert.PDF(convert.PDFOptions{

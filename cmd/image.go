@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -67,8 +68,7 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>. Examples: --to jpg, --to webp, --to png")
-			return nil
+			return fmt.Errorf("missing --to <format>. Examples: --to jpg, --to webp, --to png")
 		}
 		log.Debug("converting image files", "files", args, "target", targetFmt)
 		return convert.Image(convert.ImageOptions{

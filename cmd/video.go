@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -63,8 +64,7 @@ Target formats: mp4, mov, mkv, webm, avi, flv`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>. Examples: --to mp4, --to mkv, --to webm")
-			return nil
+			return fmt.Errorf("missing --to <format>. Examples: --to mp4, --to mkv, --to webm")
 		}
 		log.Debug("converting video files", "files", args, "target", targetFmt)
 		return convert.Video(convert.VideoOptions{

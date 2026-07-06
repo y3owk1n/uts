@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 
 	"github.com/y3owk1n/uts/internal/convert"
@@ -38,8 +38,7 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>")
-			return nil
+			return fmt.Errorf("missing --to <format>")
 		}
 		return convert.Image(convert.ImageOptions{
 			Files:     args,
@@ -64,8 +63,7 @@ Target formats: mp4, mkv, webm, mov, avi, flv`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>")
-			return nil
+			return fmt.Errorf("missing --to <format>")
 		}
 		return convert.Video(convert.VideoOptions{
 			Files:     args,
@@ -89,8 +87,7 @@ Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>")
-			return nil
+			return fmt.Errorf("missing --to <format>")
 		}
 		return convert.Audio(convert.AudioOptions{
 			Files:     args,
@@ -114,8 +111,7 @@ Target formats: jpg, png (PDF→images), pdf (images→PDF)`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>")
-			return nil
+			return fmt.Errorf("missing --to <format>")
 		}
 		return convert.PDF(convert.PDFOptions{
 			Files:     args,

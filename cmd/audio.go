@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -64,8 +65,7 @@ Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if targetFmt == "" {
-			log.Error("Missing --to <format>. Examples: --to mp3, --to wav, --to flac, --to aac")
-			return nil
+			return fmt.Errorf("missing --to <format>. Examples: --to mp3, --to wav, --to flac, --to aac")
 		}
 		log.Debug("converting audio files", "files", args, "target", targetFmt)
 		return convert.Audio(convert.AudioOptions{
