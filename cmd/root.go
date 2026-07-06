@@ -98,4 +98,5 @@ func init() {
 	RootCmd.AddCommand(convertCmd)
 	RootCmd.AddCommand(infoCmd)
 	RootCmd.AddCommand(doctorCmd)
+	RootCmd.AddCommand(envCmd)
 }
