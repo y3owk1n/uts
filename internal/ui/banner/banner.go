@@ -22,7 +22,7 @@ func Logo(palette style.Palette, version string) string {
 
 	versionStyle := lipgloss.NewStyle().
 		Foreground(palette.Muted).
-		Render(" v" + version)
+		Render(" " + version)
 
 	tagline := lipgloss.NewStyle().
 		Foreground(palette.Muted).
