@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -114,7 +113,7 @@ func (s *Spinner) Stop() {
 	s.wg.Wait()
 
 	//nolint:errcheck
-	fmt.Fprint(s.writer, "\r\033[K")
+	lipgloss.Fprint(s.writer, "\r\033[K")
 }
 
 func (s *Spinner) run() {
@@ -144,5 +143,5 @@ func (s *Spinner) writeFrame() {
 	s.model = updated
 
 	//nolint:errcheck
-	fmt.Fprintf(s.writer, "\r\033[K%s%s %s", prefix, frame, suffix)
+	lipgloss.Fprintf(s.writer, "\r\033[K%s%s %s", prefix, frame, suffix)
 }

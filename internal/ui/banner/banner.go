@@ -40,7 +40,7 @@ func Header(palette style.Palette, text string) string {
 		Render(text)
 
 	sep := lipgloss.NewStyle().
-		Foreground(palette.Border).
+		Foreground(palette.Subtle).
 		Render(stringsRepeat("─", lipgloss.Width(text)))
 
 	return styled + "\n" + sep + "\n"

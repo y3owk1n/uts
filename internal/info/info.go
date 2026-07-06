@@ -1,6 +1,6 @@
 // Package info provides file information display functionality.
 //
-//nolint:errcheck,goconst,mnd
+//nolint:goconst,mnd
 package info
 
 import (
@@ -23,7 +23,7 @@ type Options struct {
 
 // Show displays information about the given files.
 func Show(opts Options) {
-	fmt.Fprint(os.Stdout, ui.Banner.Logo(opts.Version))
+	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(opts.Version))
 
 	palette := ui.Style.Palette()
 
@@ -72,7 +72,7 @@ func Show(opts Options) {
 				"\n" + suggestions
 		}
 
-		fmt.Fprint(os.Stdout, ui.Panel.Section(ui.Message.Highlight(base), body))
+		_, _ = lipgloss.Fprint(os.Stdout, ui.Panel.Section(ui.Message.Highlight(base), body))
 	}
 }
 
