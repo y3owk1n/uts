@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/ui"
@@ -60,8 +61,9 @@ func deriveArchiveName(files []string) string {
 		}
 
 		base := filepath.Base(files[0])
+		name := strings.TrimSuffix(base, filepath.Ext(base))
 
-		return stringsTrimSuffix(base, filepath.Ext(base))
+		return strings.TrimSuffix(name, ".tar")
 	}
 
 	parent := filepath.Dir(files[0])
@@ -147,7 +149,7 @@ func archiveWith(algo, outDir, name string, files []string) string {
 			append([]string{"-czf", output}, files...)...,
 		)
 	case "zstd", "zst":
-		if !hasTool("zstd") {
+		if !util.HasTool("zstd") {
 			return ""
 		}
 
@@ -163,7 +165,7 @@ func archiveWith(algo, outDir, name string, files []string) string {
 			append([]string{"-cJf", output}, files...)...,
 		)
 	case "brotli", "br":
-		if !hasTool("brotli") {
+		if !util.HasTool("brotli") {
 			return ""
 		}
 
@@ -202,7 +204,7 @@ func archiveWith(algo, outDir, name string, files []string) string {
 
 		return output
 	case "zip":
-		if !hasTool("zip") {
+		if !util.HasTool("zip") {
 			return ""
 		}
 
@@ -231,12 +233,4 @@ func archiveWith(algo, outDir, name string, files []string) string {
 	}
 
 	return output
-}
-
-func stringsTrimSuffix(str, suffix string) string {
-	if len(str) >= len(suffix) && str[len(str)-len(suffix):] == suffix {
-		return str[:len(str)-len(suffix)]
-	}
-
-	return str
 }

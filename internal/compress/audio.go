@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -25,6 +26,13 @@ func Audio(opts AudioOptions) error {
 		return err
 	}
 
+	if !util.HasTool("ffmpeg") {
+		return derrors.New(
+			derrors.CodeToolNotFound,
+			"ffmpeg not found — install: brew install ffmpeg",
+		)
+	}
+
 	ui.Message.Infof(
 		"Audio compression at %s quality (bitrate=%s, codec=aac)",
 		opts.Quality,
@@ -39,7 +47,7 @@ func Audio(opts AudioOptions) error {
 			continue
 		}
 
-		out := util.OutputPathExt(file, "small", "m4a")
+		out := util.CalcOutputPath(file, "small", opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
@@ -90,7 +98,7 @@ func Audio(opts AudioOptions) error {
 			)
 
 			if opts.InPlace {
-				util.MaybeInPlace(out, file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)

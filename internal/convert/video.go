@@ -48,7 +48,7 @@ func Video(opts VideoOptions) error {
 			continue
 		}
 
-		out := util.ConvertOutputPath(file, target)
+		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf(
@@ -96,7 +96,7 @@ func Video(opts VideoOptions) error {
 			)
 
 			if opts.InPlace {
-				util.RemoveInPlace(file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Conversion failed: %s", file)

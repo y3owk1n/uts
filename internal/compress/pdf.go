@@ -44,7 +44,7 @@ func PDF(opts PDFOptions) error {
 			continue
 		}
 
-		out := util.OutputPath(file, "small")
+		out := util.CalcOutputPath(file, "small", opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
@@ -100,6 +100,10 @@ func PDF(opts PDFOptions) error {
 				util.HumanSize(newSize),
 				ratio,
 			)
+
+			if opts.InPlace {
+				util.MaybeInPlace(out, file)
+			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
 			ui.Message.Mutedf("gs: %s", string(output))

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -26,6 +27,13 @@ func Video(opts VideoOptions) error {
 		return err
 	}
 
+	if !util.HasTool("ffmpeg") {
+		return derrors.New(
+			derrors.CodeToolNotFound,
+			"ffmpeg not found — install: brew install ffmpeg",
+		)
+	}
+
 	ui.Message.Infof(
 		"Video compression at %s quality (crf=%d, preset=%s)",
 		opts.Quality,
@@ -41,7 +49,7 @@ func Video(opts VideoOptions) error {
 			continue
 		}
 
-		out := util.OutputPath(file, "small")
+		out := util.CalcOutputPath(file, "small", opts.OutputDir)
 		origSize := util.FileSize(file)
 
 		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
@@ -97,7 +105,7 @@ func Video(opts VideoOptions) error {
 			)
 
 			if opts.InPlace {
-				util.MaybeInPlace(out, file)
+				util.MaybeReplaceOrRemove(out, file)
 			}
 		} else {
 			ui.Message.Errorf("Compression failed: %s", file)
