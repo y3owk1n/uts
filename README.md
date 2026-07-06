@@ -1,51 +1,63 @@
+<div align="center">
+
 # uts
 
-**One CLI to rule them all.** Compress, convert, and inspect any media file without remembering a dozen different command-line tools.
+**One CLI to rule them all.**
 
-[![CI](https://github.com/y3owk1n/uts/actions/workflows/ci.yml/badge.svg)](https://github.com/y3owk1n/uts/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/y3owk1n/uts.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/y3owk1n/uts)](https://goreportcard.com/report/github.com/y3owk1n/uts)
+_Compress, convert, and inspect any media file without remembering a dozen different command-line tools._
+
+![Go Version](https://img.shields.io/github/go-mod/go-version/y3owk1n/uts?style=flat-square&logo=go)
+[![Latest Release](https://img.shields.io/github/v/release/y3owk1n/uts?style=flat-square)](https://github.com/y3owk1n/uts/releases)
+[![License](https://img.shields.io/github/license/y3owk1n/uts?style=flat-square)](LICENSE)
+
+**Free and open-source.** Zero telemetry. Runs entirely local.
+
+|      macOS       |      Linux       |
+| :--------------: | :--------------: |
+| Full featured ✅ | Full featured ✅ |
+
+</div>
 
 ---
 
-Media files are everywhere, and every format has its own toolchain — `ffmpeg` for video, `pngquant` for PNGs, `jpegoptim` for JPEGs, `ghostscript` for PDFs, `tar` + a half-dozen compressors for archives. Each one has a *different* CLI syntax that you have to look up every time.
+Media files are everywhere, but every format has its own specialized toolchain: `ffmpeg` for video/audio, `pngquant` for PNGs, `jpegoptim` for JPEGs, `ghostscript` for PDFs, and `tar` + various compressors for archives. Each tool has a different, complex command syntax that you have to look up every single time.
 
-**uts** wraps all of them behind a single, predictable API:
+**uts** wraps all of them behind a single, predictable CLI pattern:
 
-```
+```bash
 uts <category> <action> <input...> [flags]
 ```
 
-That's it. Same pattern for video, images, audio, PDFs, and archives. Install the tools, install uts, and you're done — no more Googling flags.
+That's it. The same pattern works for video, images, audio, PDFs, and archives. Install your encoders, install `uts`, and you're done — no more Googling flags.
 
 ---
 
 ## Quick start
 
 ```bash
-# Images
+# Compress image with a low-quality (small size) preset
 uts image compress screenshot.png -q low
+
+# Convert HEIC photo to JPG
 uts image convert photo.heic --to jpg
 
-# Video
+# Compress video in-place (replaces original recording)
 uts video compress recording.mp4 -i
+
+# Convert MOV video to MP4
 uts video convert clip.mov --to mp4
 
-# Audio
-uts audio compress podcast.wav -q high
-uts audio convert track.flac --to mp3
+# Compress WAV audio to MP3 using high preset quality
+uts audio convert track.wav --to mp3 -q high
 
-# PDF
-uts pdf compress thesis.pdf -q low
-uts pdf convert report.pdf --to jpg
+# Compress PDF document to a medium-res profile
+uts pdf compress draft.pdf -q medium
 
-# Archives
+# Compress folder to a zstd tarball archive
 uts archive compress ./project/ --algorithm zstd
-uts archive extract backup.zip
-uts archive list project.tar.gz
 
-# Info
-uts info video.mp4
+# Inspect media file details and get format-specific recommendations
+uts info recording.mp4
 ```
 
 ---
@@ -53,105 +65,119 @@ uts info video.mp4
 ## Install
 
 ```bash
-# go install
+# Homebrew (Recommended)
+brew install y3owk1n/tap/uts
+
+# Via Go Toolchain
 go install github.com/y3owk1n/uts@latest
 
-# nix flake
-nix profile install github:y3owk1n/uts
-
-# binary
-# download from github.com/y3owk1n/uts/releases
-
-# homebrew (coming soon)
-brew install y3owk1n/tap/uts
+# Pre-compiled Binary
+# Download for your platform from github.com/y3owk1n/uts/releases
 ```
 
-### Dependencies
-
-uts auto-detects whatever tools you already have installed and picks the best one for each format. Install what you need:
-
-| Category | Recommended                                  |
-|----------|----------------------------------------------|
-| image    | `brew install imagemagick pngquant jpegoptim cwebp gifsicle` |
-| video    | `brew install ffmpeg`                        |
-| audio    | `brew install ffmpeg`                        |
-| pdf      | `brew install ghostscript poppler imagemagick` |
-| archive  | `brew install zstd xz brotli`                |
+For complete instructions and environment details, see the [Installation Guide](docs/INSTALLATION.md).
 
 ---
 
-## The uts pattern
+## The uts Pattern
 
-```
+```bash
 uts <category> <action> <files...> [flags]
 ```
 
-| Category  | Actions                     | Formats                                                               |
-|-----------|-----------------------------|-----------------------------------------------------------------------|
-| `image`   | compress, convert           | png, jpg, webp, gif, bmp, tiff, heic, avif                           |
-| `video`   | compress, convert           | mp4, mov, mkv, avi, webm, m4v, flv, wmv                              |
-| `audio`   | compress, convert           | wav, flac, aac, mp3, m4a, opus, ogg, wma                             |
-| `pdf`     | compress, convert           | PDF ↔ jpg/png, images → PDF                                          |
-| `archive` | compress, extract, list     | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2                           |
+### Supported Actions
 
-Quality is controlled the same way across every category via `-q`:
+| Category      | Actions                       | Formats                                          |
+| ------------- | ----------------------------- | ------------------------------------------------ |
+| **`image`**   | `compress`, `convert`         | png, jpg, jpeg, webp, gif, bmp, tiff, heic, avif |
+| **`video`**   | `compress`, `convert`         | mp4, mov, mkv, avi, webm, m4v, flv, wmv          |
+| **`audio`**   | `compress`, `convert`         | wav, flac, aac, mp3, m4a, opus, ogg, wma         |
+| **`pdf`**     | `compress`, `convert`         | pdf, jpg, png                                    |
+| **`archive`** | `compress`, `extract`, `list` | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2       |
 
-| Preset  | Video (CRF) | Image (%) | Audio (kbps) | PDF (DPI) |
-|---------|-------------|-----------|--------------|-----------|
-| `high`  | 23          | 90        | 192          | 300/400   |
-| `medium`| 28          | 80        | 128          | 150/300   |
-| `low`   | 32          | 60        | 96           | 72/150    |
-| `<n>`   | raw CRF     | raw %     | raw kbps     | raw DPI   |
+### Quality Presets (`-q, --quality`)
 
----
+Quality is mapped consistently across media formats using high-level presets:
 
-## Flags
-
-| Flag                    | Description                                           |
-|-------------------------|-------------------------------------------------------|
-| `-q, --quality`         | Quality preset or raw value                           |
-| `-o, --output`          | Output directory                                      |
-| `-i, --in-place`        | Replace original file                                 |
-| `-n, --dry-run`         | Preview without executing                             |
-| `-v, --verbose`         | Debug logging                                         |
-| `-r, --recursive`       | Recursive glob patterns                               |
-| `--algorithm`           | Archive algorithm (auto, gzip, zstd, xz, brotli, zip) |
-| `--to`                  | Target format for conversion                          |
+| Level        | Video (CRF)        | Image (%)             | Audio (kbps)          | PDF (DPI / Setting)    |
+| ------------ | ------------------ | --------------------- | --------------------- | ---------------------- |
+| **`high`**   | `23` (Slow, best)  | `90%`                 | `192k`                | `400 DPI` (`/printer`) |
+| **`medium`** | `28` (Default)     | `80%`                 | `128k`                | `300 DPI` (`/ebook`)   |
+| **`low`**    | `32` (Fast, small) | `60%`                 | `96k`                 | `150 DPI` (`/screen`)  |
+| **`<num>`**  | Raw CRF (`0-51`)   | Raw quality (`1-100`) | Raw kbps (e.g. `256`) | Raw DPI (e.g. `72`)    |
 
 ---
 
-## How it works
+## Global Options
 
-uts detects the tools on your system and dispatches to the best one for each format:
-
-| Format  | Compress                               | Convert                        |
-|---------|----------------------------------------|--------------------------------|
-| PNG     | pngquant + optipng                     | ImageMagick / sips             |
-| JPEG    | jpegoptim                              | ImageMagick / sips             |
-| WebP    | cwebp                                  | ImageMagick / sips             |
-| GIF     | gifsicle                               | ImageMagick / sips             |
-| HEIC    | heif-convert → JPEG                    | ImageMagick / sips             |
-| AVIF    | cavif / avifenc                        | ImageMagick / sips             |
-| Video   | ffmpeg (libx265)                       | ffmpeg                         |
-| Audio   | ffmpeg (aac)                           | ffmpeg                         |
-| PDF     | ghostscript                            | pdftoppm / ImageMagick         |
-| Archive | tar + zstd/xz/gzip/brotli/zip          | tar / unzip / zstd / xz / bz2  |
-
-No config files, no XML, no YAML — just the tools you already have, wrapped in a consistent CLI.
+| Flag | Long Flag     | Description                                                              |
+| ---- | ------------- | ------------------------------------------------------------------------ |
+| `-q` | `--quality`   | Compression preset quality level or raw numeric value                    |
+| `-o` | `--output`    | Destination directory (defaults to same folder as input)                 |
+| `-i` | `--in-place`  | Overwrite the input file with the output file                            |
+| `-n` | `--dry-run`   | Show commands that would be executed without running them                |
+| `-v` | `--verbose`   | Output raw debug logs and CLI tool commands                              |
+| `-r` | `--recursive` | Evaluate recursive glob patterns (e.g., `**/*.png`)                      |
+|      | `--algorithm` | Archive type algorithm selection (`gzip`, `zstd`, `xz`, `brotli`, `zip`) |
+|      | `--to`        | Target format file extension when performing conversion                  |
 
 ---
 
-## Development
+## How It Works
 
-```bash
-just build       # bin/uts
-just test        # run tests
-just lint        # golangci-lint
-just genman      # man pages
+`uts` auto-detects whatever command-line tools you already have installed and dispatches the execution logic to the most suitable tool:
+
 ```
+                  ┌───► [pngquant / optipng] (PNG)
+                  ├───► [jpegoptim]          (JPEG)
+uts image ───────►├───► [cwebp]              (WebP)
+                  └───► [imagemagick]        (AVIF/HEIC)
+
+uts video ───────────► [ffmpeg]              (MP4/MKV/WebM)
+uts pdf ─────────────► [ghostscript]          (PDF Compression)
+uts archive ─────────► [tar / zstd / zip]    (Archives)
+```
+
+For complete mapping behaviors and tool fallback mechanics, check out the [CLI Guide](docs/CLI.md).
+
+---
+
+## Documentation
+
+Everything you need to go deep:
+
+| Guide                                | What's in it                                                        |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| [Installation](docs/INSTALLATION.md) | Go installation, Nix setup, bin releases, dependency setup          |
+| [CLI Reference](docs/CLI.md)         | Details on commands, presets, exit codes, and extensive examples    |
+| [Development](docs/DEVELOPMENT.md)   | Build tasks, testing tiers, code style, and release process         |
+| [Contributing](CONTRIBUTING.md)      | Code of conduct, making changes, commit messages, and PR guidelines |
+
+---
+
+## Support & Contributing
+
+Contributions are always welcome. `uts` is built in pure Go with a clean, modular structure. Check out [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+
+If `uts` has earned a place in your toolbelt, please consider starring the repository! ⭐
 
 ---
 
 ## License
 
-[MIT](LICENSE)
+MIT — see [LICENSE](LICENSE).
+
+<div align="center">
+<br/>
+
+**One command to rule them all.**
+
+```bash
+brew install y3owk1n/tap/uts && uts image compress screenshot.png -q low
+```
+
+<br/>
+
+Made with ❤️ by <a href="https://github.com/y3owk1n">y3owk1n</a>
+
+</div>
