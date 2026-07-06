@@ -26,43 +26,14 @@ var RootCmd = &cobra.Command{
 A modular CLI tool with category-based subcommands for compressing,
 converting, and managing media files.
 
-USAGE
-  uts <category> <action> <input...> [options]
+Quality presets: low, medium, high, or a numeric value
+(CRF 0–51 for video, 1–100 for images, 96k–320k for audio, 72–300 DPI for PDF).
 
-CATEGORIES
-  video     Video files (mp4, mov, mkv, avi, webm)
-  image     Images (png, jpg, webp, gif, bmp, tiff, heic, avif)
-  pdf       PDF documents
-  audio     Audio files (wav, flac, aac, mp3, m4a, opus)
-  archive   Directories/files into archives
-
-ACTIONS
-  compress  Compress files (available for all categories)
-  convert   Convert between formats (image, video, audio, pdf)
-  extract   Extract archives (archive only)
-  list      List archive contents (archive only)
-
-TOP-LEVEL COMMANDS
-  info      Show file info and suggestions
-  convert   Convert between formats directly
-
-QUALITY
-  high      Best quality, larger files      (crf=23, 192k audio, 300dpi PDF)
-  medium    Balanced quality and size       (crf=28, 128k audio, 150dpi PDF)
-  low       Smallest files, lower quality   (crf=32, 96k audio, 72dpi PDF)
-  <number>  Numeric value (CRF, quality %, kbps, or DPI)
-
-QUICK EXAMPLES
-  uts image compress screenshot.png -q low
+Files are saved as <name>-small.<ext> by default. Use -i to replace in-place.`,
+	Example: `  uts image compress screenshot.png -q low
   uts video compress recording.mp4 -i
   uts convert image photo.heic --to jpg
-  uts convert image screenshot.png --to webp -q 85
-  uts info video.mp4
-
-OUTPUT
-  Files are saved as <name>-small.<ext> in the same directory by default.
-  Use -o to specify a different output directory.
-  Use -i to replace the original file in-place.`,
+  uts info video.mp4`,
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()

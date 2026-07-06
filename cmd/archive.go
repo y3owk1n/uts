@@ -14,38 +14,13 @@ var archiveCmd = &cobra.Command{
 	Use:     "archive",
 	Aliases: []string{"arc", "ar"},
 	Short:   "Compress, extract, and list archives",
-	Long: `Compress, extract, and list archive files.
+	Long: `Compress, extract, and list archives.
 
-ACTIONS
-  compress  Create compressed archive (auto-selects best algorithm)
-  extract   Extract archive contents (zip, tar, gz, zst, xz, bz2)
-  list      List archive contents without extracting
-
-ALGORITHMS
-  auto    Auto-select best algorithm (default)
-  gzip    gzip compression
-  zstd    Zstandard compression (fast + good ratio)
-  xz      LZMA2 compression (best ratio)
-  brotli  Brotli compression
-  zip     ZIP archive (widely compatible)
-
-COMPRESSION EXAMPLES
-  uts archive compress ./project/ --algorithm zstd
-  uts archive compress ./data/ --algorithm gzip
-  uts archive compress ./src/ --dry-run
-  uts archive compress ./docs/ --algorithm brotli
-  uts archive compress ./photos/ --algorithm zip
-
-EXTRACTION EXAMPLES
+Supported algorithms: auto, gzip, zstd, xz, brotli, zip
+Archive formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+	Example: `  uts archive compress ./project/ --algorithm zstd
   uts archive extract backup.zip
-  uts archive extract project.tar.gz
-  uts archive extract '*.tar.zst'
-  uts archive extract backup.zip -o ./output/
-
-LIST EXAMPLES
-  uts archive list backup.zip
-  uts archive list project.tar.gz
-  uts archive list '*.tar.zst'`,
+  uts archive list project.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -57,22 +32,9 @@ var archiveCompressCmd = &cobra.Command{
 	Short:   "Create compressed archives from files/directories",
 	Long: `Create compressed archives with the specified algorithm.
 
-USAGE
-  uts archive compress <input...> [options]
-
-ALGORITHMS
-  auto    Auto-select best algorithm (default)
-  gzip    gzip compression
-  zstd    Zstandard (fast + good ratio)
-  xz      LZMA2 (best ratio)
-  brotli  Brotli compression
-  zip     ZIP archive (widely compatible)
-
-OUTPUT
-  Creates <name>.tar.<algorithm> or <name>.zip in the output directory.
-
-EXAMPLES
-  uts archive compress ./project/ --algorithm zstd
+Algorithms: auto (default), gzip, zstd, xz, brotli, zip.
+Output saved as <name>.tar.<algo> or <name>.zip.`,
+	Example: `  uts archive compress ./project/ --algorithm zstd
   uts archive compress ./data/ --algorithm zip
   uts archive compress ./src/ --dry-run`,
 	Args: cobra.MinimumNArgs(1),
@@ -93,22 +55,8 @@ var archiveExtractCmd = &cobra.Command{
 	Short:   "Extract archive contents",
 	Long: `Extract archive files to the specified directory.
 
-USAGE
-  uts archive extract <archive...> [options]
-
-SUPPORTED FORMATS
-  zip     ZIP archives
-  tar     Plain tar archives
-  gz/tgz  gzip-compressed tar
-  zst     Zstandard-compressed tar
-  xz/txz  XZ-compressed tar
-  bz2     bzip2-compressed tar
-
-OUTPUT
-  Extracts archive contents into the output directory.
-
-EXAMPLES
-  uts archive extract backup.zip
+Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+	Example: `  uts archive extract backup.zip
   uts archive extract project.tar.gz
   uts archive extract '*.tar.zst' -o ./output/
   uts archive extract backup.zip --dry-run`,
@@ -129,19 +77,8 @@ var archiveListCmd = &cobra.Command{
 	Short:   "List archive contents",
 	Long: `List the contents of archive files without extracting.
 
-USAGE
-  uts archive list <archive...> [options]
-
-SUPPORTED FORMATS
-  zip     ZIP archives
-  tar     Plain tar archives
-  gz/tgz  gzip-compressed tar
-  zst     Zstandard-compressed tar
-  xz/txz  XZ-compressed tar
-  bz2     bzip2-compressed tar
-
-EXAMPLES
-  uts archive list backup.zip
+Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+	Example: `  uts archive list backup.zip
   uts archive list project.tar.gz
   uts archive list '*.tar.zst'`,
 	Args: cobra.MinimumNArgs(1),
