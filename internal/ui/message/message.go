@@ -101,13 +101,13 @@ func (pr *Printer) Bulletf(format string, args ...any) {
 		Foreground(pr.palette.Muted).
 		Render("  " + pr.icons.Bullet + " " + fmt.Sprintf(format, args...))
 	//nolint:errcheck
-	fmt.Fprintln(pr.out, styled)
+	lipgloss.Fprintln(pr.out, styled)
 }
 
 // Mutedf prints a muted message.
 func (pr *Printer) Mutedf(format string, args ...any) {
 	//nolint:errcheck
-	fmt.Fprintln(pr.out, pr.types.Muted.Render(fmt.Sprintf(format, args...)))
+	lipgloss.Fprintln(pr.out, pr.types.Muted.Render(fmt.Sprintf(format, args...)))
 }
 
 // Pair prints a key-value pair.
@@ -115,7 +115,7 @@ func (pr *Printer) Pair(key, value string) {
 	styledKey := pr.types.Key.Render(key)
 	styledVal := pr.types.Code.Render(value)
 	//nolint:errcheck
-	fmt.Fprintf(pr.out, "%s  %s\n", styledKey, styledVal)
+	lipgloss.Fprintf(pr.out, "%s  %s\n", styledKey, styledVal)
 }
 
 // PairLine returns a key-value pair as a string.
@@ -196,5 +196,5 @@ func (pr *Printer) line(
 	styledIcon := lipgloss.NewStyle().Bold(true).Foreground(iconColor).Render(icon)
 	styledMsg := pr.types.Body.Render(message)
 	//nolint:errcheck
-	fmt.Fprintf(writer, "%s %s\n", styledIcon, styledMsg)
+	lipgloss.Fprintf(writer, "%s %s\n", styledIcon, styledMsg)
 }

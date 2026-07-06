@@ -3,173 +3,115 @@ package env
 
 import (
 	"fmt"
+	"image/color"
 	"os"
-	"sort"
 
 	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 	"github.com/y3owk1n/uts/internal/ui"
+	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
-// varEntry describes one environment variable.
+const (
+	sectionControl = "Control"
+	sectionTheming = "Theming"
+)
+
+// varEntry describes one row in the env table.
 type varEntry struct {
-	Name        string
-	Default     string
-	Description string
-}
-
-// vars returns the full list of recognized variables.
-func vars() []varEntry {
-	return []varEntry{
-		// Color palette
-		{
-			Name:        "UTS_COLOR_PRIMARY",
-			Default:     "#6f4d8c / #c9a0e9",
-			Description: "Logo, titles, active elements",
-		},
-		{
-			Name:        "UTS_COLOR_PRIMARY_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of PRIMARY",
-		},
-		{
-			Name:        "UTS_COLOR_PRIMARY_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of PRIMARY",
-		},
-		{Name: "UTS_COLOR_TEXT", Default: "#2a2738 / #e0def4", Description: "Body text"},
-		{Name: "UTS_COLOR_TEXT_LIGHT", Default: "", Description: "Light-terminal variant of TEXT"},
-		{Name: "UTS_COLOR_TEXT_DARK", Default: "", Description: "Dark-terminal variant of TEXT"},
-		{
-			Name:        "UTS_COLOR_MUTED",
-			Default:     "#5a5672 / #9a96b5",
-			Description: "Dimmed / secondary text",
-		},
-		{
-			Name:        "UTS_COLOR_MUTED_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of MUTED",
-		},
-		{Name: "UTS_COLOR_MUTED_DARK", Default: "", Description: "Dark-terminal variant of MUTED"},
-		{
-			Name:        "UTS_COLOR_SUBTLE",
-			Default:     "#9a96b5 / #5a5672",
-			Description: "Hints and subtle labels",
-		},
-		{
-			Name:        "UTS_COLOR_SUBTLE_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of SUBTLE",
-		},
-		{
-			Name:        "UTS_COLOR_SUBTLE_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of SUBTLE",
-		},
-		{
-			Name:        "UTS_COLOR_BORDER",
-			Default:     "#2a2738 / #3a364d",
-			Description: "Panel borders and separators",
-		},
-		{
-			Name:        "UTS_COLOR_BORDER_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of BORDER",
-		},
-		{
-			Name:        "UTS_COLOR_BORDER_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of BORDER",
-		},
-		{
-			Name:        "UTS_COLOR_ACCENT",
-			Default:     "#4068a0 / #80b8e8",
-			Description: "Info highlights and links",
-		},
-		{
-			Name:        "UTS_COLOR_ACCENT_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of ACCENT",
-		},
-		{
-			Name:        "UTS_COLOR_ACCENT_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of ACCENT",
-		},
-		{Name: "UTS_COLOR_SUCCESS", Default: "#5a9b65 / #abe9b3", Description: "Success messages"},
-		{
-			Name:        "UTS_COLOR_SUCCESS_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of SUCCESS",
-		},
-		{
-			Name:        "UTS_COLOR_SUCCESS_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of SUCCESS",
-		},
-		{Name: "UTS_COLOR_WARNING", Default: "#b89556 / #f9e2af", Description: "Warning messages"},
-		{
-			Name:        "UTS_COLOR_WARNING_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of WARNING",
-		},
-		{
-			Name:        "UTS_COLOR_WARNING_DARK",
-			Default:     "",
-			Description: "Dark-terminal variant of WARNING",
-		},
-		{Name: "UTS_COLOR_ERROR", Default: "#b86080 / #f28fad", Description: "Error messages"},
-		{
-			Name:        "UTS_COLOR_ERROR_LIGHT",
-			Default:     "",
-			Description: "Light-terminal variant of ERROR",
-		},
-		{Name: "UTS_COLOR_ERROR_DARK", Default: "", Description: "Dark-terminal variant of ERROR"},
-
-		// Color control
-		{
-			Name:        "NO_COLOR",
-			Default:     "",
-			Description: "Disable all color output (see no-color.org)",
-		},
-		{Name: "FORCE_COLOR", Default: "", Description: "Force color output (e.g. when piping)"},
-	}
+	Section string
+	Name    string
+	Value   string
 }
 
 // Run displays all recognized environment variables and their current values.
 func Run(version string) {
 	palette := ui.Style.Palette()
-	entries := vars()
+	vars := collectVars(palette)
 
-	// Sort by name for stable output.
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Name < entries[j].Name
-	})
-
-	_, _ = fmt.Fprint(os.Stdout, ui.Banner.Logo(version))
-
-	nameStyle := lipgloss.NewStyle().Foreground(palette.Accent).Bold(true)
-	valStyle := lipgloss.NewStyle().Foreground(palette.Text)
-	unsetStyle := lipgloss.NewStyle().Foreground(palette.Muted).Italic(true)
-	descStyle := lipgloss.NewStyle().Foreground(palette.Subtle)
-
-	for _, entry := range entries {
-		val, ok := os.LookupEnv(entry.Name)
-
-		var valuePart string
-		switch {
-		case ok:
-			valuePart = valStyle.Render(val)
-		case entry.Default != "":
-			valuePart = unsetStyle.Render(entry.Default + " (default)")
-		default:
-			valuePart = unsetStyle.Render("not set")
-		}
-
-		_, _ = fmt.Fprintf(
-			os.Stdout, "  %s  %s  %s\n",
-			nameStyle.Render(entry.Name),
-			valuePart,
-			descStyle.Render(entry.Description),
-		)
+	tbl := ui.Table.New("Section", "Variable", "Value")
+	for _, v := range vars {
+		tbl.Row(v.Section, v.Name, ui.Message.Accent(v.Value))
 	}
+
+	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(version))
+	_, _ = lipgloss.Fprintln(os.Stdout)
+	_, _ = lipgloss.Fprint(os.Stdout, tbl.Render(palette))
+}
+
+// collectVars resolves every env var uts cares about.
+func collectVars(palette style.Palette) []varEntry {
+	forceColor := envValue("FORCE_COLOR", "not set")
+	noColor := envValue("NO_COLOR", "not set")
+
+	return []varEntry{
+		// Color control
+		{Section: sectionControl, Name: "FORCE_COLOR", Value: forceColor},
+		{Section: sectionControl, Name: "NO_COLOR", Value: noColor},
+		// Theming — resolved palette values
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_PRIMARY",
+			Value:   adaptiveColorValue(palette.Primary),
+		},
+		{Section: sectionTheming, Name: "UTS_COLOR_TEXT", Value: adaptiveColorValue(palette.Text)},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_MUTED",
+			Value:   adaptiveColorValue(palette.Muted),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_SUBTLE",
+			Value:   adaptiveColorValue(palette.Subtle),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_BORDER",
+			Value:   adaptiveColorValue(palette.Border),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_ACCENT",
+			Value:   adaptiveColorValue(palette.Accent),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_SUCCESS",
+			Value:   adaptiveColorValue(palette.Success),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_WARNING",
+			Value:   adaptiveColorValue(palette.Warning),
+		},
+		{
+			Section: sectionTheming,
+			Name:    "UTS_COLOR_ERROR",
+			Value:   adaptiveColorValue(palette.Error),
+		},
+	}
+}
+
+// envValue returns the value of an env var, or the fallback if unset.
+func envValue(name, fallback string) string {
+	if v, ok := os.LookupEnv(name); ok {
+		return v
+	}
+
+	return fallback
+}
+
+// adaptiveColorValue formats an AdaptiveColor as
+// "Light: <hex>, Dark: <hex>" so the user can see at a glance
+// what each terminal background will render.
+func adaptiveColorValue(c compat.AdaptiveColor) string {
+	return "Light: " + colorToHex(c.Light) + ", Dark: " + colorToHex(c.Dark)
+}
+
+// colorToHex converts a color.Color to a "#rrggbb" hex string.
+func colorToHex(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+
+	return fmt.Sprintf("#%02x%02x%02x", r>>8, g>>8, b>>8) //nolint:mnd
 }

@@ -5,7 +5,6 @@ package doctor
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -46,7 +45,7 @@ var baseTools = []tool{
 func Run(version string) {
 	palette := ui.Style.Palette()
 
-	_, _ = fmt.Fprint(os.Stdout, ui.Banner.Logo(version))
+	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(version))
 
 	missing := 0
 	found := 0
@@ -63,10 +62,10 @@ func Run(version string) {
 	}
 
 	// Print results grouped: found first, then missing.
-	_, _ = fmt.Fprint(os.Stdout, ui.Panel.Section("Found", renderFound(palette)))
+	_, _ = lipgloss.Fprint(os.Stdout, ui.Panel.Section("Found", renderFound(palette)))
 
 	if missing > 0 {
-		_, _ = fmt.Fprint(os.Stdout, ui.Panel.Section("Missing", renderMissing(palette)))
+		_, _ = lipgloss.Fprint(os.Stdout, ui.Panel.Section("Missing", renderMissing(palette)))
 	}
 
 	// Summary.
@@ -121,8 +120,8 @@ func renderFound(palette style.Palette) string {
 
 	okStyle := lipgloss.NewStyle().Foreground(palette.Success)
 	nameStyle := lipgloss.NewStyle().Foreground(palette.Text)
-	verStyle := lipgloss.NewStyle().Foreground(palette.Muted)
-	usedByStyle := lipgloss.NewStyle().Foreground(palette.Subtle)
+	verStyle := lipgloss.NewStyle().Foreground(palette.Accent)
+	usedByStyle := lipgloss.NewStyle().Foreground(palette.Muted)
 
 	for _, tool := range baseTools {
 		if tool.Version == "" {
@@ -146,7 +145,8 @@ func renderMissing(palette style.Palette) string {
 	errStyle := lipgloss.NewStyle().Foreground(palette.Error)
 	nameStyle := lipgloss.NewStyle().Foreground(palette.Text)
 	reqStyle := lipgloss.NewStyle().Foreground(palette.Warning)
-	usedByStyle := lipgloss.NewStyle().Foreground(palette.Subtle)
+	usedByStyle := lipgloss.NewStyle().Foreground(palette.Muted)
+	hintStyle := lipgloss.NewStyle().Foreground(palette.Accent)
 
 	installHint := installHint()
 
@@ -167,7 +167,7 @@ func renderMissing(palette style.Palette) string {
 	}
 
 	builder.WriteString("\n")
-	builder.WriteString(usedByStyle.Render("  " + installHint))
+	builder.WriteString(hintStyle.Render("  " + installHint))
 
 	return builder.String()
 }
