@@ -41,6 +41,9 @@ func CompressionRatio(orig, compressed int64) string {
 	pct := (orig - compressed) * 1000 / orig
 	whole := pct / 10
 	frac := pct % 10
+	if pct == 0 {
+		return "(0.0%)"
+	}
 	if pct < 0 {
 		whole = -whole
 		frac = -frac
