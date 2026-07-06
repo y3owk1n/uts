@@ -52,7 +52,7 @@ func Extract(opts ExtractOptions) error {
 		case "zip":
 			if !hasTool("unzip") {
 				sp.Stop()
-				ui.Message.Errorf("unzip not found")
+				ui.Message.Errorf("unzip not found — install: brew install unzip")
 				continue
 			}
 			err = exec.Command("unzip", "-qo", file, "-d", outDir).Run()
@@ -63,7 +63,7 @@ func Extract(opts ExtractOptions) error {
 		case "zst", "zstd":
 			if !hasTool("zstd") {
 				sp.Stop()
-				ui.Message.Errorf("zstd not found")
+				ui.Message.Errorf("zstd not found — install: brew install zstd")
 				continue
 			}
 			decomp := exec.Command("zstd", "-d", file, "--force", "-o", file+".unpacked")
@@ -123,7 +123,7 @@ func List(opts ListOptions) error {
 		case "zip":
 			if !hasTool("unzip") {
 				sp.Stop()
-				ui.Message.Errorf("unzip not found")
+				ui.Message.Errorf("unzip not found — install: brew install unzip")
 				continue
 			}
 			output, err = exec.Command("unzip", "-l", file).Output()
@@ -136,7 +136,7 @@ func List(opts ListOptions) error {
 				output, err = exec.Command("zstd", "-dc", file).Output()
 			} else {
 				sp.Stop()
-				ui.Message.Errorf("zstd not found")
+				ui.Message.Errorf("zstd not found — install: brew install zstd")
 				continue
 			}
 		case "xz", "txz":

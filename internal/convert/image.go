@@ -82,7 +82,7 @@ func Image(opts ImageOptions) error {
 			convertErr = exec.Command("sips", "-s", "format", sipsFmt, file, "--out", out).Run()
 		} else {
 			sp.Stop()
-			ui.Message.Errorf("No conversion tool found. Install: brew install imagemagick")
+			ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
 			return nil
 		}
 		sp.Stop()

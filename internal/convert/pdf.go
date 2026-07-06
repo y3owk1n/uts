@@ -96,7 +96,7 @@ func pdfToImages(opts PDFOptions) error {
 			convertErr = exec.Command(magick, "-density", fmt.Sprintf("%d", dpi), file, filepath.Join(outDir, "page.%03d."+target)).Run()
 		} else {
 			sp.Stop()
-			ui.Message.Errorf("No PDF conversion tool found. Install: brew install poppler imagemagick")
+			ui.Message.Errorf("PDF conversion tools not found — install: brew install poppler imagemagick")
 			return nil
 		}
 		sp.Stop()
@@ -167,7 +167,7 @@ func imagesToPDF(opts PDFOptions) error {
 		convertErr = exec.Command(magick, args...).Run()
 	} else {
 		sp.Stop()
-		ui.Message.Errorf("ImageMagick not found. Install: brew install imagemagick")
+		ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
 		return nil
 	}
 	sp.Stop()

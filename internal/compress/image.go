@@ -176,7 +176,7 @@ func magickCmd(input, output string, quality int) error {
 		ui.Message.Mutedf("Using ImageMagick (convert)")
 		return exec.Command("convert", input, "-quality", fmt.Sprintf("%d", quality), "-strip", output).Run()
 	}
-	ui.Message.Errorf("No ImageMagick found. Install: brew install imagemagick")
+	ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
 	return fmt.Errorf("imagemagick not found")
 }
 

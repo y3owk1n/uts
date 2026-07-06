@@ -88,7 +88,7 @@ func archiveAuto(outDir, name string, files []string) error {
 		ui.Message.Successf("Best algorithm: %s → %s (%s)", bestAlgo, filepath.Base(bestFile), util.HumanSize(bestSize))
 		return nil
 	}
-	ui.Message.Errorf("No compression tools available. Install: zstd, xz, brotli, or gzip")
+	ui.Message.Errorf("No compression tools available — install: brew install zstd xz brotli gzip")
 	return fmt.Errorf("no compression tools available")
 }
 
