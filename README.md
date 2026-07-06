@@ -1,6 +1,6 @@
 # uts
 
-**All-in-one utility toolkit** – Compress, convert, and manage media files from the command line.
+**One CLI to rule them all.** Compress, convert, and inspect any media file without remembering a dozen different command-line tools.
 
 [![CI](https://github.com/y3owk1n/uts/actions/workflows/ci.yml/badge.svg)](https://github.com/y3owk1n/uts/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/y3owk1n/uts.svg)](LICENSE)
@@ -8,100 +8,121 @@
 
 ---
 
-## Installation
+Media files are everywhere, and every format has its own toolchain — `ffmpeg` for video, `pngquant` for PNGs, `jpegoptim` for JPEGs, `ghostscript` for PDFs, `tar` + a half-dozen compressors for archives. Each one has a *different* CLI syntax that you have to look up every time.
 
-### Homebrew (coming soon)
+**uts** wraps all of them behind a single, predictable API:
 
-```bash
-brew install y3owk1n/tap/uts
+```
+uts <category> <action> <input...> [flags]
 ```
 
-### Go install
-
-```bash
-go install github.com/y3owk1n/uts@latest
-```
-
-### Binary releases
-
-Download the latest binary from the [releases page](https://github.com/y3owk1n/uts/releases).
-
-### Nix flake
-
-```bash
-nix profile install github:y3owk1n/uts
-```
-
-### Build from source
-
-```bash
-git clone https://github.com/y3owk1n/uts.git
-cd uts
-nix develop  # or: devbox shell
-just build
-./bin/uts --help
-```
+That's it. Same pattern for video, images, audio, PDFs, and archives. Install the tools, install uts, and you're done — no more Googling flags.
 
 ---
 
 ## Quick start
 
 ```bash
-# Image operations
+# Images
 uts image compress screenshot.png -q low
 uts image convert photo.heic --to jpg
 
-# Video operations
+# Video
 uts video compress recording.mp4 -i
 uts video convert clip.mov --to mp4
 
-# Audio operations
+# Audio
 uts audio compress podcast.wav -q high
 uts audio convert track.flac --to mp3
 
-# PDF operations
+# PDF
 uts pdf compress thesis.pdf -q low
 uts pdf convert report.pdf --to jpg
 
-# Archive operations
+# Archives
 uts archive compress ./project/ --algorithm zstd
 uts archive extract backup.zip
 uts archive list project.tar.gz
 
-# File info
+# Info
 uts info video.mp4
 ```
 
 ---
 
-## Categories
+## Install
 
-| Category  | Operations                          | Formats                                                                 |
-|-----------|-------------------------------------|-------------------------------------------------------------------------|
-| `image`   | compress, convert                   | png, jpg, webp, gif, bmp, tiff, heic, avif                             |
-| `video`   | compress, convert                   | mp4, mov, mkv, avi, webm, m4v, flv, wmv                                |
-| `audio`   | compress, convert                   | wav, flac, aac, mp3, m4a, opus, ogg, wma                               |
-| `pdf`     | compress, convert                   | PDF → jpg/png, images → PDF                                            |
-| `archive` | compress, extract, list             | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2                             |
+```bash
+# go install
+go install github.com/y3owk1n/uts@latest
+
+# nix flake
+nix profile install github:y3owk1n/uts
+
+# binary
+# download from github.com/y3owk1n/uts/releases
+
+# homebrew (coming soon)
+brew install y3owk1n/tap/uts
+```
+
+### Dependencies
+
+uts auto-detects whatever tools you already have installed and picks the best one for each format. Install what you need:
+
+| Category | Recommended                                  |
+|----------|----------------------------------------------|
+| image    | `brew install imagemagick pngquant jpegoptim cwebp gifsicle` |
+| video    | `brew install ffmpeg`                        |
+| audio    | `brew install ffmpeg`                        |
+| pdf      | `brew install ghostscript poppler imagemagick` |
+| archive  | `brew install zstd xz brotli`                |
 
 ---
 
-## Quality presets
+## The uts pattern
 
-All compress and convert commands accept `-q` / `--quality` with presets or raw values:
+```
+uts <category> <action> <files...> [flags]
+```
+
+| Category  | Actions                     | Formats                                                               |
+|-----------|-----------------------------|-----------------------------------------------------------------------|
+| `image`   | compress, convert           | png, jpg, webp, gif, bmp, tiff, heic, avif                           |
+| `video`   | compress, convert           | mp4, mov, mkv, avi, webm, m4v, flv, wmv                              |
+| `audio`   | compress, convert           | wav, flac, aac, mp3, m4a, opus, ogg, wma                             |
+| `pdf`     | compress, convert           | PDF ↔ jpg/png, images → PDF                                          |
+| `archive` | compress, extract, list     | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2                           |
+
+Quality is controlled the same way across every category via `-q`:
 
 | Preset  | Video (CRF) | Image (%) | Audio (kbps) | PDF (DPI) |
 |---------|-------------|-----------|--------------|-----------|
-| `high`  | 23 (slow)   | 90        | 192          | 300/400   |
-| `medium`| 28 (medium) | 80        | 128          | 150/300   |
-| `low`   | 32 (fast)   | 60        | 96           | 72/150    |
+| `high`  | 23          | 90        | 192          | 300/400   |
+| `medium`| 28          | 80        | 128          | 150/300   |
+| `low`   | 32          | 60        | 96           | 72/150    |
 | `<n>`   | raw CRF     | raw %     | raw kbps     | raw DPI   |
 
 ---
 
-## Tools
+## Flags
 
-uts detects and uses the best available tool for each format:
+| Flag                    | Description                                           |
+|-------------------------|-------------------------------------------------------|
+| `-q, --quality`         | Quality preset or raw value                           |
+| `-o, --output`          | Output directory                                      |
+| `-i, --in-place`        | Replace original file                                 |
+| `-n, --dry-run`         | Preview without executing                             |
+| `-v, --verbose`         | Debug logging                                         |
+| `-r, --recursive`       | Recursive glob patterns                               |
+| `--algorithm`           | Archive algorithm (auto, gzip, zstd, xz, brotli, zip) |
+| `--to`                  | Target format for conversion                          |
+
+---
+
+## How it works
+
+uts detects the tools on your system and dispatches to the best one for each format:
 
 | Format  | Compress                               | Convert                        |
 |---------|----------------------------------------|--------------------------------|
@@ -116,56 +137,18 @@ uts detects and uses the best available tool for each format:
 | PDF     | ghostscript                            | pdftoppm / ImageMagick         |
 | Archive | tar + zstd/xz/gzip/brotli/zip          | tar / unzip / zstd / xz / bz2  |
 
----
-
-## Flags
-
-| Flag                    | Description                                           |
-|-------------------------|-------------------------------------------------------|
-| `-q, --quality`         | Quality preset: low, medium, high, or numeric         |
-| `-o, --output`          | Output directory (default: same as input)             |
-| `-i, --in-place`        | Replace original file with compressed version         |
-| `-n, --dry-run`         | Show what would be done without doing it              |
-| `-v, --verbose`         | Enable verbose/debug logging                          |
-| `-r, --recursive`       | Enable recursive glob patterns                        |
-| `--algorithm`           | Archive algorithm: auto, gzip, zstd, xz, brotli, zip |
-| `--to`                  | Target format for conversion                          |
+No config files, no XML, no YAML — just the tools you already have, wrapped in a consistent CLI.
 
 ---
 
 ## Development
 
-### Prerequisites
-
-- Go 1.26+
-- [just](https://github.com/casey/just) command runner
-- [devbox](https://www.jetify.com/devbox/) (optional, for reproducible shell)
-
-### Commands
-
 ```bash
-just build       # Build binary to bin/uts
-just test        # Run all tests
-just test-unit   # Run unit tests
-just lint        # Run golangci-lint
-just fmt         # auto-format code
-just genman      # Generate man pages (build/man/)
-just clean       # Remove build artifacts
+just build       # bin/uts
+just test        # run tests
+just lint        # golangci-lint
+just genman      # man pages
 ```
-
-### Release
-
-```bash
-just release-ci v1.2.3
-```
-
-Builds cross-platform binaries for darwin/linux/windows × arm64/amd64.
-
----
-
-## Similar projects
-
-- [nvs](https://github.com/y3owk1n/nvs) – Neovim Version Switcher (same UI toolkit)
 
 ---
 
