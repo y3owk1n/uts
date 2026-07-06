@@ -1,20 +1,16 @@
-//nolint:goconst,mnd
+//nolint:mnd
 package compress
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
-
-var errNoCompressionTools = derrors.New(derrors.CodeToolNotFound, "no compression tools available")
 
 // ArchiveOptions represents options for archive creation.
 type ArchiveOptions struct {
@@ -44,10 +40,6 @@ func Archive(opts ArchiveOptions) error {
 
 	_ = os.MkdirAll(outDir, 0o755)
 
-	if opts.Algorithm == "auto" {
-		return archiveAuto(outDir, name, opts.Files)
-	}
-
 	archiveWith(opts.Algorithm, outDir, name, opts.Files)
 
 	return nil
@@ -72,53 +64,6 @@ func deriveArchiveName(files []string) string {
 	}
 
 	return filepath.Base(parent)
-}
-
-func archiveAuto(outDir, name string, files []string) error {
-	var bestAlgo, bestFile string
-
-	bestSize := int64(999999999999)
-
-	spinner := ui.NewSpinner(nil, 0)
-	spinner.Start()
-
-	algorithms := []string{"zstd", "xz", "brotli", "gzip"}
-	for _, algo := range algorithms {
-		spinner.SetSuffix(fmt.Sprintf("Trying %s...", algo))
-
-		candidate := archiveWith(algo, outDir, name, files)
-		if candidate != "" {
-			size := util.FileSize(candidate)
-			if size < bestSize {
-				if bestFile != "" {
-					_ = os.Remove(bestFile)
-				}
-
-				bestSize = size
-				bestAlgo = algo
-				bestFile = candidate
-			} else {
-				_ = os.Remove(candidate)
-			}
-		}
-	}
-
-	spinner.Stop()
-
-	if bestFile != "" {
-		ui.Message.Successf(
-			"Best algorithm: %s → %s (%s)",
-			bestAlgo,
-			filepath.Base(bestFile),
-			util.HumanSize(bestSize),
-		)
-
-		return nil
-	}
-
-	ui.Message.Errorf("No compression tools available — install: brew install zstd xz brotli gzip")
-
-	return errNoCompressionTools
 }
 
 func archiveWith(algo, outDir, name string, files []string) string {

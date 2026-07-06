@@ -85,8 +85,8 @@ func init() {
 		"Verbose output")
 	RootCmd.PersistentFlags().BoolVarP(&recursive, "recursive", "r", false,
 		"Enable recursive glob patterns")
-	RootCmd.PersistentFlags().StringVar(&algorithm, "algorithm", "auto",
-		"Archive algorithm (auto, gzip, zstd, xz, brotli, zip)")
+	RootCmd.PersistentFlags().StringVar(&algorithm, "algorithm", "zip",
+		"Archive algorithm (gzip, zstd, xz, brotli, zip)")
 	RootCmd.PersistentFlags().StringVar(&targetFmt, "to", "",
 		"Target format for conversion")
 
