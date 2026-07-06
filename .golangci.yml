@@ -1,0 +1,82 @@
+version: "2"
+run:
+  tests: true
+formatters:
+  enable:
+    - gci
+    - goimports
+    - gofmt
+    - gofumpt
+    - golines
+linters:
+  default: all
+  disable:
+    - contextcheck
+    - gomodguard
+    - cyclop
+    - depguard
+    - dupl
+    - exhaustruct
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gocyclo
+    - gosec
+    - ireturn
+    - lll
+    - maintidx
+    - nestif
+    - paralleltest
+    - wrapcheck
+    - wsl
+
+  settings:
+    funlen:
+      lines: -1
+      statements: 120
+    misspell:
+      locale: US
+    gocritic:
+      disabled-checks:
+        - dupSubExpr
+      enabled-checks:
+        - ruleguard
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: true
+      branch-max-lines: 2
+    revive:
+      rules:
+        - name: receiver-naming
+          severity: warning
+          disabled: false
+        - name: var-naming
+          severity: warning
+          disabled: false
+          arguments:
+            - ["err", "Err"]
+            - []
+        - name: context-as-argument
+          severity: warning
+          disabled: false
+          arguments:
+            - allowTypesBefore: "*testing.T,*testing.B"
+        - name: exported
+          severity: warning
+          disabled: false
+        - name: package-comments
+          severity: warning
+          disabled: false
+        - name: error-return
+          severity: warning
+          disabled: false
+        - name: error-strings
+          severity: warning
+          disabled: false
+        - name: error-naming
+          severity: warning
+          disabled: false
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
