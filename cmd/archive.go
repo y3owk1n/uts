@@ -19,7 +19,7 @@ var archiveCmd = &cobra.Command{
 	Short:   "Compress, extract, and list archives",
 	Long: `Compress, extract, and list archives.
 
-Supported algorithms: auto, gzip, zstd, xz, brotli, zip
+Supported algorithms: gzip, zstd, xz, brotli, zip
 Archive formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
 	Example: `  uts archive compress ./project/ --algorithm zstd
   uts archive extract backup.zip
@@ -36,7 +36,7 @@ var archiveCompressCmd = &cobra.Command{
 	Short:   "Create compressed archives from files/directories",
 	Long: `Create compressed archives with the specified algorithm.
 
-Algorithms: auto (default), gzip, zstd, xz, brotli, zip.
+Algorithms: zip (default), gzip, zstd, xz, brotli.
 Output saved as <name>.tar.<algo> or <name>.zip.`,
 	Example: `  uts archive compress ./project/ --algorithm zstd
   uts archive compress ./data/ --algorithm zip

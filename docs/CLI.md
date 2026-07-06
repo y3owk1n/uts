@@ -45,7 +45,7 @@ These options apply to commands across all categories:
 | `-n` | `--dry-run`   | Print the compiled command without executing it.                                 | `false`            |
 | `-v` | `--verbose`   | Output raw debug logs and tool output commands.                                  | `false`            |
 | `-r` | `--recursive` | Evaluate recursive glob patterns (e.g., `**/*.png`).                             | `false`            |
-|      | `--algorithm` | Archive type algorithm selection (e.g., `gzip`, `zstd`, `xz`, `brotli`, `zip`).  | `auto`             |
+|      | `--algorithm` | Archive type algorithm selection (e.g., `gzip`, `zstd`, `xz`, `brotli`, `zip`).  | `zip`              |
 |      | `--to`        | Target format file extension when performing conversion.                         | _None_             |
 | `-h` | `--help`      | Display syntax, actions, and options helper info.                                |                    |
 |      | `--version`   | Display version, commit hash, and build timestamp.                               |                    |
