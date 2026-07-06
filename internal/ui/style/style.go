@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/colorprofile"
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/compat"
+	"github.com/charmbracelet/colorprofile"
 )
 
 // Palette defines the color palette for the CLI.
@@ -38,15 +38,30 @@ const (
 
 func basePalette() Palette {
 	return Palette{
-		Primary: compat.AdaptiveColor{Light: lipgloss.Color("#6f4d8c"), Dark: lipgloss.Color(base0E)},
-		Text:    compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base05)},
-		Muted:   compat.AdaptiveColor{Light: lipgloss.Color(base03), Dark: lipgloss.Color(base04)},
-		Subtle:  compat.AdaptiveColor{Light: lipgloss.Color(base04), Dark: lipgloss.Color(base03)},
-		Border:  compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base02)},
-		Accent:  compat.AdaptiveColor{Light: lipgloss.Color("#4068a0"), Dark: lipgloss.Color(base0D)},
-		Success: compat.AdaptiveColor{Light: lipgloss.Color("#5a9b65"), Dark: lipgloss.Color(base0B)},
-		Warning: compat.AdaptiveColor{Light: lipgloss.Color("#b89556"), Dark: lipgloss.Color(base0A)},
-		Error:   compat.AdaptiveColor{Light: lipgloss.Color("#b86080"), Dark: lipgloss.Color(base08)},
+		Primary: compat.AdaptiveColor{
+			Light: lipgloss.Color("#6f4d8c"),
+			Dark:  lipgloss.Color(base0E),
+		},
+		Text:   compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base05)},
+		Muted:  compat.AdaptiveColor{Light: lipgloss.Color(base03), Dark: lipgloss.Color(base04)},
+		Subtle: compat.AdaptiveColor{Light: lipgloss.Color(base04), Dark: lipgloss.Color(base03)},
+		Border: compat.AdaptiveColor{Light: lipgloss.Color(base01), Dark: lipgloss.Color(base02)},
+		Accent: compat.AdaptiveColor{
+			Light: lipgloss.Color("#4068a0"),
+			Dark:  lipgloss.Color(base0D),
+		},
+		Success: compat.AdaptiveColor{
+			Light: lipgloss.Color("#5a9b65"),
+			Dark:  lipgloss.Color(base0B),
+		},
+		Warning: compat.AdaptiveColor{
+			Light: lipgloss.Color("#b89556"),
+			Dark:  lipgloss.Color(base0A),
+		},
+		Error: compat.AdaptiveColor{
+			Light: lipgloss.Color("#b86080"),
+			Dark:  lipgloss.Color(base08),
+		},
 	}
 }
 
