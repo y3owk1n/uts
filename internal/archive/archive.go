@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/y3owk1n/uts/internal/ui"
+	"github.com/y3owk1n/uts/internal/ui/style"
 )
 
 type ExtractOptions struct {
@@ -38,6 +40,7 @@ func Extract(opts ExtractOptions) error {
 			continue
 		}
 
+		ui.Message.Stepf("Extracting %s → %s/", file, outDir)
 		os.MkdirAll(outDir, 0755)
 
 		sp := ui.NewSpinner(nil, 0)
@@ -100,6 +103,7 @@ func Extract(opts ExtractOptions) error {
 }
 
 func List(opts ListOptions) error {
+	palette := style.Default()
 	for _, file := range opts.Files {
 		if !fileExists(file) {
 			ui.Message.Warnf("File not found: %s", file)
@@ -147,7 +151,9 @@ func List(opts ListOptions) error {
 		sp.Stop()
 
 		if err == nil {
-			fmt.Println(string(output))
+			fmt.Print(lipgloss.NewStyle().
+				Foreground(palette.Text).
+				Render(string(output)) + "\n")
 		} else {
 			ui.Message.Errorf("Failed to list: %s", file)
 		}
