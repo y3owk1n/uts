@@ -23,7 +23,7 @@ func Logo(palette style.Palette, version string) string {
 	tagline := lipgloss.NewStyle().
 		Foreground(palette.Muted).
 		Padding(0, 0, 0, 2).
-		Render("All-in-one utility toolkit")
+		Render("One CLI for every format")
 
 	return mark + wordmark + versionStyle + "\n" + tagline + "\n"
 }

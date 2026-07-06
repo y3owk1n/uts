@@ -20,11 +20,11 @@ var (
 
 var RootCmd = &cobra.Command{
 	Use:   "uts",
-	Short: "All-in-one utility toolkit",
-	Long: `uts — All-in-one utility toolkit v` + Version + `
+	Short: "One CLI for every format",
+	Long: `uts — One CLI for every format v` + Version + `
 
-A modular CLI tool with category-based subcommands for compressing,
-converting, and managing media files.
+Compress, convert, and inspect any media file without remembering
+a dozen different command-line tools.
 
 Quality presets: low, medium, high, or a numeric value
 (CRF 0–51 for video, 1–100 for images, 96k–320k for audio, 72–300 DPI for PDF).
