@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/y3owk1n/uts/compare/v0.1.3...v0.2.0) (2026-07-06)
+
+
+### Features
+
+* **cli:** add `doctor` commmand ([#16](https://github.com/y3owk1n/uts/issues/16)) ([2284906](https://github.com/y3owk1n/uts/commit/228490685af1fa2f9d84fc7a10f57706ea4e380d))
+* **cli:** add `env` command ([#17](https://github.com/y3owk1n/uts/issues/17)) ([afb9947](https://github.com/y3owk1n/uts/commit/afb99479dc6f6f86e15753da0e9a825f2f542bfa))
+
+
+### Bug Fixes
+
+* **ui:** remove the additional `v` in banner version ([#18](https://github.com/y3owk1n/uts/issues/18)) ([f95546a](https://github.com/y3owk1n/uts/commit/f95546a60c53b36ea76ef05791a4c47e8b96ebdb))
+
+
+### Documentation
+
+* add colors customisation documentation ([#13](https://github.com/y3owk1n/uts/issues/13)) ([9745052](https://github.com/y3owk1n/uts/commit/9745052265df100096e8630f88bae9e1f32d0b0e))
+
 ## [0.1.3](https://github.com/y3owk1n/uts/compare/v0.1.2...v0.1.3) (2026-07-06)
 
 
