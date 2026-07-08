@@ -15,7 +15,7 @@
         "x86_64-linux"
       ];
 
-      latestVersion = "0.2.0";
+      latestVersion = "0.2.1";
 
       makeUtsPackage =
         pkgs: version: useZip: commitHash:
