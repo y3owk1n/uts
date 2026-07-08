@@ -1,4 +1,3 @@
-//nolint:goconst
 package convert
 
 import (
@@ -31,7 +30,7 @@ func Video(opts VideoOptions) error {
 		return nil
 	}
 
-	vcodec, acodec := videoCodecs(target)
+	vcodec, acodec := util.VideoCodecs("." + target)
 	ui.Message.Infof("Converting video to .%s (%s/%s)", target, vcodec, acodec)
 
 	total := len(opts.Files)
@@ -109,21 +108,4 @@ func Video(opts VideoOptions) error {
 	}
 
 	return nil
-}
-
-func videoCodecs(target string) (string, string) {
-	switch target {
-	case "mp4", "mov":
-		return "libx264", "aac"
-	case "mkv":
-		return "libx265", "aac"
-	case "webm":
-		return "libvpx-vp9", "libopus"
-	case "avi":
-		return "libx264", "mp3"
-	case "flv":
-		return "libx264", "aac"
-	}
-
-	return "libx264", "aac"
 }

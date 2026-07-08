@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
@@ -78,13 +79,16 @@ func Video(opts VideoOptions) error {
 		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
 		spinner.Start()
 
+		ext := filepath.Ext(file)
+		vcodec, acodec := util.VideoCodecs(ext)
+
 		cmd := exec.CommandContext(
 			context.Background(), "ffmpeg",
 			"-i", file,
-			"-vcodec", "libx265",
+			"-vcodec", vcodec,
 			"-crf", strconv.Itoa(crf),
 			"-preset", preset,
-			"-acodec", "aac",
+			"-acodec", acodec,
 			"-b:a", "128k",
 			"-movflags", "+faststart",
 			"-y", out,
