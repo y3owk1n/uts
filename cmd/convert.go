@@ -85,10 +85,11 @@ var convertAudioCmd = &cobra.Command{
 	Use:     "audio",
 	Aliases: []string{"a"},
 	Short:   "Convert between audio formats",
-	Long: `Convert audio files between formats.
+	Long: `Convert audio files (or extract audio from video) between formats.
 
 Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Example: `  uts convert audio track.wav --to mp3 -q 96
+  uts convert audio video.mp4 --to mp3
   uts convert audio song.flac --to m4a`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

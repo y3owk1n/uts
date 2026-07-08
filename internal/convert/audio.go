@@ -85,6 +85,7 @@ func Audio(opts AudioOptions) error {
 		output, err := exec.CommandContext(
 			context.Background(), "ffmpeg",
 			"-i", file,
+			"-vn",
 			"-c:a", codec,
 			"-b:a", bitrate,
 			"-y", out,

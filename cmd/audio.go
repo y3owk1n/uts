@@ -59,10 +59,11 @@ var audioConvertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
 	Short:   "Convert between audio formats",
-	Long: `Convert audio files between formats using ffmpeg.
+	Long: `Convert audio files (or extract audio from video) using ffmpeg.
 
 Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
 	Example: `  uts audio convert track.wav --to mp3
+  uts audio convert video.mp4 --to mp3
   uts audio convert song.flac --to m4a -q high
   uts audio convert '*.wav' --to mp3 -q 96
   uts audio convert lecture.wav --to mp3`,
