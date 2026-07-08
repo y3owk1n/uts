@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/y3owk1n/uts/compare/v0.2.0...v0.2.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* ensure env colors are applied properly ([#19](https://github.com/y3owk1n/uts/issues/19)) ([00eea2a](https://github.com/y3owk1n/uts/commit/00eea2afbd31117fa060e16a64068d61aa6eb51c))
+
 ## [0.2.0](https://github.com/y3owk1n/uts/compare/v0.1.3...v0.2.0) (2026-07-06)
 
 
