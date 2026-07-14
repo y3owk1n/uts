@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/y3owk1n/uts/compare/v0.2.1...v0.2.2) (2026-07-14)
+
+
+### Bug Fixes
+
+* **audio:** simple video to audio support ([#23](https://github.com/y3owk1n/uts/issues/23)) ([5ad1f6e](https://github.com/y3owk1n/uts/commit/5ad1f6ed76f841d3465fe87ca4ae71dda7178d59))
+* **video:** use correct format codecs for video compression ([#21](https://github.com/y3owk1n/uts/issues/21)) ([b85fbd3](https://github.com/y3owk1n/uts/commit/b85fbd3d01c8db160e99951087ee53969477a7cc))
+
 ## [0.2.1](https://github.com/y3owk1n/uts/compare/v0.2.0...v0.2.1) (2026-07-06)
 
 
