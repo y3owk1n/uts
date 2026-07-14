@@ -20,23 +20,23 @@ if useZip then
       {
         "aarch64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-arm64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.1/uts-darwin-arm64.zip)`
-          sha256 = "sha256-oebova6p7xsrIYbfP0p9CCkG5BN6+poPzgYAYOQ1nj0=";
+          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.2/uts-darwin-arm64.zip)`
+          sha256 = "sha256-rYINkOfgkhyUFjTMR3tIktMG8XmypFXIdn2iOfeHqrk=";
         };
         "x86_64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-amd64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.1/uts-darwin-amd64.zip)`
-          sha256 = "sha256-kN/cO+jXZ7w5Zs9VIFhihtTQuEifMHNcG+BQtLPHSr4=";
+          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.2/uts-darwin-amd64.zip)`
+          sha256 = "sha256-iahCUqvyd3Rv1vdg2rKsKKw5bSrLjKtIJFk1RHwevgI=";
         };
         "aarch64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-arm64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.1/uts-linux-arm64.zip)`
-          sha256 = "sha256-486+oEwFMIqKAmBNsGslHguSxsEnMkXT+ZIXvfYpiV4=";
+          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.2/uts-linux-arm64.zip)`
+          sha256 = "sha256-+785VYf1pqDnbcrdebWHIQfstLqO4aPg25F5pZVv75U=";
         };
         "x86_64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-amd64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.1/uts-linux-amd64.zip)`
-          sha256 = "sha256-BK10buQiClaoax26RSQny3pb39DKQsHHbISkaKYg3xo=";
+          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.2.2/uts-linux-amd64.zip)`
+          sha256 = "sha256-m5pQ39oRWDAnLuKDBGXpxGmDmyJm5hwfO2KU7BAdt7Q=";
         };
       }
       .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
