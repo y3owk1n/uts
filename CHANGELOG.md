@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/y3owk1n/uts/compare/v0.2.2...v0.2.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* typo on vendorHash update ([e12deb4](https://github.com/y3owk1n/uts/commit/e12deb4dfc6f0746d55c5fd13ace8a57d26e1bf2))
+
 ## [0.2.2](https://github.com/y3owk1n/uts/compare/v0.2.1...v0.2.2) (2026-07-14)
 
 
