@@ -124,7 +124,7 @@ For complete installation instructions and dependency details, see the [Installa
 | **`video`**   | `compress`, `convert`         | mp4, mov, mkv, avi, webm, m4v, flv, wmv    |
 | **`audio`**   | `compress`, `convert`         | mp3, flac, aac, wav, m4a, opus, ogg, wma   |
 | **`pdf`**     | `compress`, `convert`         | pdf, jpg, png                              |
-| **`archive`** | `compress`, `extract`, `list` | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2 |
+| **`archive`** | `compress`, `extract`, `list` | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2, tar.br |
 
 ---
 
