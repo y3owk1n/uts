@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/y3owk1n/uts/compare/v0.2.3...v0.3.0) (2026-09-06)
+
+
+### Features
+
+* **cli:** add -j parallel jobs, --skip-existing and --backup ([#48](https://github.com/y3owk1n/uts/issues/48)) ([6ce7dd2](https://github.com/y3owk1n/uts/commit/6ce7dd2ab6dc4ca00b39c963b84e5200e273e496))
+* **cli:** expand globs and directories, scope flags per command ([#42](https://github.com/y3owk1n/uts/issues/42)) ([860b36a](https://github.com/y3owk1n/uts/commit/860b36a92b279b994d37a6321e3d3a65fd571ade))
+* **compress:** add --max to cap the longest edge of images and video ([#47](https://github.com/y3owk1n/uts/issues/47)) ([77afb26](https://github.com/y3owk1n/uts/commit/77afb260ea9d589eb02633e7a97e7d8cd4bf0372))
+* **convert:** lossless video remux and consistent output paths ([#40](https://github.com/y3owk1n/uts/issues/40)) ([edd1535](https://github.com/y3owk1n/uts/commit/edd153537d7e7fdffe8921883dc3300a0f8aa419))
+* **ffmpeg:** show percentage and time remaining during encodes ([#46](https://github.com/y3owk1n/uts/issues/46)) ([912606b](https://github.com/y3owk1n/uts/commit/912606b3a369ce67ba414856f28c057f99558b55))
+* **info:** add --json output and PDF page count ([#45](https://github.com/y3owk1n/uts/issues/45)) ([efdf516](https://github.com/y3owk1n/uts/commit/efdf516c5c3452cb2eed7cb679bbbe413eaab9ec))
+* **info:** show media details via ffprobe, extend doctor ([#43](https://github.com/y3owk1n/uts/issues/43)) ([098f798](https://github.com/y3owk1n/uts/commit/098f7980b95256ba29b32ded07f66d6be1d16c36))
+
+
+### Bug Fixes
+
+* **archive:** stream compressed tarballs and report failures ([#41](https://github.com/y3owk1n/uts/issues/41)) ([58c1123](https://github.com/y3owk1n/uts/commit/58c1123c54b6bbbb0f99a939630fc75886434e80))
+* **cli:** validate quality ranges, add --quiet, keep piped output clean ([#44](https://github.com/y3owk1n/uts/issues/44)) ([d5f437a](https://github.com/y3owk1n/uts/commit/d5f437a6dc129fc3b59444de246d16fe3bad92ca))
+* **compress:** rebuild compress on the shared runner ([#38](https://github.com/y3owk1n/uts/issues/38)) ([1dae302](https://github.com/y3owk1n/uts/commit/1dae3022f0435fd1b5fd7a81ff31910b91cb4a5e))
+* **image:** treat PNGs pngquant cannot improve as not smaller, not failed ([#49](https://github.com/y3owk1n/uts/issues/49)) ([c5ee798](https://github.com/y3owk1n/uts/commit/c5ee79844c4bd8877b85644d621e4806b2c3ca74))
+
 ## [0.2.3](https://github.com/y3owk1n/uts/compare/v0.2.2...v0.2.3) (2026-09-04)
 
 
