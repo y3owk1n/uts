@@ -38,9 +38,15 @@ Quality: high (crf=23, slow), medium (crf=28, medium), low (crf=32, fast), or ra
 	Example: `  uts video compress screen-recording.mp4 -q low
   uts video compress vacation.mov -q high -i
   uts video compress lecture.mkv -q 25 --dry-run
+  uts video compress 4k-screen-recording.mov --max 1920
   uts video compress ./recordings -r`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		err := checkMaxEdge()
+		if err != nil {
+			return err
+		}
+
 		files, err := inputs(args, format.VideoExts)
 		if err != nil {
 			return err
@@ -54,11 +60,13 @@ Quality: high (crf=23, slow), medium (crf=28, medium), low (crf=32, fast), or ra
 			OutputDir: outputDir,
 			InPlace:   inPlace,
 			DryRun:    dryRun,
+			MaxEdge:   maxEdge,
 		})
 	},
 }
 
 func init() {
+	addMaxFlag(videoCompressCmd)
 	videoCmd.AddCommand(videoCompressCmd)
 	videoCmd.AddCommand(newVideoConvertCmd("convert", []string{"x"}))
 }

@@ -16,7 +16,7 @@ func has(args []string, want ...string) bool {
 }
 
 func TestEncodeArgsVP9(t *testing.T) {
-	args := ffmpeg.EncodeArgs("in.mp4", "out.webm", "webm", 30, "fast")
+	args := ffmpeg.EncodeArgs("in.mp4", "out.webm", "webm", 30, "fast", 0)
 
 	if !has(args, "-c:v", "libvpx-vp9") || !has(args, "-b:v", "0") || !has(args, "-cpu-used", "4") {
 		t.Errorf("VP9 args missing constant-quality flags: %v", args)
@@ -28,7 +28,7 @@ func TestEncodeArgsVP9(t *testing.T) {
 }
 
 func TestEncodeArgsMP4(t *testing.T) {
-	args := ffmpeg.EncodeArgs("in.mov", "out.mp4", ".mp4", 23, "slow")
+	args := ffmpeg.EncodeArgs("in.mov", "out.mp4", ".mp4", 23, "slow", 0)
 
 	for _, want := range [][]string{
 		{"-c:v", "libx264"},
@@ -49,12 +49,29 @@ func TestEncodeArgsMP4(t *testing.T) {
 }
 
 func TestEncodeArgsHEVCTag(t *testing.T) {
-	if !has(ffmpeg.EncodeArgs("a", "b", "mkv", 28, "medium"), "-c:v", "libx265") {
+	if !has(ffmpeg.EncodeArgs("a", "b", "mkv", 28, "medium", 0), "-c:v", "libx265") {
 		t.Error("mkv should use libx265")
 	}
 
-	if has(ffmpeg.EncodeArgs("a", "b", "mkv", 28, "medium"), "-tag:v", "hvc1") {
+	if has(ffmpeg.EncodeArgs("a", "b", "mkv", 28, "medium", 0), "-tag:v", "hvc1") {
 		t.Error("hvc1 tag only applies to mp4/mov")
+	}
+}
+
+func TestEncodeArgsMaxEdge(t *testing.T) {
+	args := ffmpeg.EncodeArgs("in.mov", "out.mp4", "mp4", 28, "medium", 1920)
+	if !has(args, "-vf", ffmpeg.ScaleFilter(1920)) {
+		t.Errorf("maxEdge should add a scale filter: %v", args)
+	}
+
+	if slices.Contains(ffmpeg.EncodeArgs("in.mov", "out.mp4", "mp4", 28, "medium", 0), "-vf") {
+		t.Error("maxEdge 0 must not add a scale filter")
+	}
+
+	filter := ffmpeg.ScaleFilter(1080)
+	if !strings.Contains(filter, "min(1080,iw)") || !strings.Contains(filter, "min(1080,ih)") ||
+		!strings.Contains(filter, "-2") {
+		t.Errorf("ScaleFilter(1080) = %q", filter)
 	}
 }
 

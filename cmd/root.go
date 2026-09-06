@@ -20,6 +20,7 @@ var (
 	recursive bool
 	algorithm string
 	targetFmt string
+	maxEdge   int
 
 	// Version is the current version of uts, set at build time.
 	Version = "dev"
@@ -101,6 +102,29 @@ func requireTarget(valid []string) error {
 	}
 
 	return derrors.Newf(derrors.CodeInvalidInput, "missing --to <format>. Valid targets: %v", valid)
+}
+
+// minMaxEdge is the smallest --max value that makes sense for any media.
+const minMaxEdge = 16
+
+// addMaxFlag attaches the --max flag to an image or video command.
+func addMaxFlag(cmd *cobra.Command) {
+	cmd.Flags().IntVar(&maxEdge, "max", 0,
+		"Shrink so the longest edge is at most this many pixels (never enlarges)")
+}
+
+// checkMaxEdge validates --max.
+func checkMaxEdge() error {
+	if maxEdge != 0 && maxEdge < minMaxEdge {
+		return derrors.Newf(
+			derrors.CodeInvalidInput,
+			"--max must be at least %d pixels, got %d",
+			minMaxEdge,
+			maxEdge,
+		)
+	}
+
+	return nil
 }
 
 // addTargetFlag attaches the --to flag with shell completion for its values.

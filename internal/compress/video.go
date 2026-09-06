@@ -19,6 +19,8 @@ type VideoOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// MaxEdge caps the longest edge in pixels; 0 keeps the resolution.
+	MaxEdge int
 }
 
 // Video compresses video files using ffmpeg, keeping the input container.
@@ -34,10 +36,11 @@ func Video(opts VideoOptions) error {
 	}
 
 	ui.Message.Infof(
-		"Video compression at %s quality (crf=%d, preset=%s)",
+		"Video compression at %s quality (crf=%d, preset=%s)%s",
 		opts.Quality,
 		crf,
 		preset,
+		maxNote(opts.MaxEdge),
 	)
 
 	return job.Run(opts.Files, job.Options{
@@ -65,7 +68,7 @@ func Video(opts VideoOptions) error {
 			Input:  file,
 			Output: out,
 			Steps: []job.Step{
-				ffmpeg.Step(file, ffmpeg.EncodeArgs(file, out, ext, crf, preset)...),
+				ffmpeg.Step(file, ffmpeg.EncodeArgs(file, out, ext, crf, preset, opts.MaxEdge)...),
 			},
 			Note: fmt.Sprintf("%s/%s crf=%d", vcodec, acodec, crf),
 		}, nil

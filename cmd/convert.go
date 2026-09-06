@@ -39,10 +39,16 @@ Target formats: ` + strings.Join(format.ImageTargets, ", "),
 		Example: `  uts image convert photo.heic --to jpg
   uts image convert screenshot.png --to webp -q high
   uts image convert photo.jpg --to avif -q 70
+  uts image convert photo.heic --to jpg --max 1600
   uts image convert ./photos --to jpg -r`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := requireTarget(format.ImageTargets)
+			if err != nil {
+				return err
+			}
+
+			err = checkMaxEdge()
 			if err != nil {
 				return err
 			}
@@ -61,10 +67,12 @@ Target formats: ` + strings.Join(format.ImageTargets, ", "),
 				OutputDir: outputDir,
 				InPlace:   inPlace,
 				DryRun:    dryRun,
+				MaxEdge:   maxEdge,
 			})
 		},
 	}
 	addTargetFlag(cmd, format.ImageTargets)
+	addMaxFlag(cmd)
 
 	return cmd
 }
@@ -77,17 +85,23 @@ func newVideoConvertCmd(use string, aliases []string) *cobra.Command {
 		Long: `Convert video files between containers using ffmpeg.
 
 When the source codecs already fit the target container the streams are
-copied without re-encoding: instant and lossless. Pass -q to force a
-re-encode at that quality.
+copied without re-encoding: instant and lossless. Pass -q or --max to
+force a re-encode.
 
 Target formats: ` + strings.Join(format.VideoTargets, ", "),
 		Example: `  uts video convert clip.mov --to mp4
   uts video convert recording.mkv --to webm -q medium
   uts video convert presentation.avi --to mkv -q 18
+  uts video convert clip.mov --to mp4 --max 1280
   uts video convert ./clips --to mp4`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := requireTarget(format.VideoTargets)
+			if err != nil {
+				return err
+			}
+
+			err = checkMaxEdge()
 			if err != nil {
 				return err
 			}
@@ -107,10 +121,12 @@ Target formats: ` + strings.Join(format.VideoTargets, ", "),
 				OutputDir:  outputDir,
 				InPlace:    inPlace,
 				DryRun:     dryRun,
+				MaxEdge:    maxEdge,
 			})
 		},
 	}
 	addTargetFlag(cmd, format.VideoTargets)
+	addMaxFlag(cmd)
 
 	return cmd
 }

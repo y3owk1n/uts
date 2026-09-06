@@ -42,9 +42,15 @@ original are reported and, with -i, the original is kept.`,
 	Example: `  uts image compress screenshot.png -q medium
   uts image compress logo.jpg -q high -i
   uts image compress ./photos -r
+  uts image compress photo.jpg --max 2000
   uts image compress '*.png' -q 75 --dry-run`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		err := checkMaxEdge()
+		if err != nil {
+			return err
+		}
+
 		files, err := inputs(args, format.ImageExts)
 		if err != nil {
 			return err
@@ -58,11 +64,13 @@ original are reported and, with -i, the original is kept.`,
 			OutputDir: outputDir,
 			InPlace:   inPlace,
 			DryRun:    dryRun,
+			MaxEdge:   maxEdge,
 		})
 	},
 }
 
 func init() {
+	addMaxFlag(imageCompressCmd)
 	imageCmd.AddCommand(imageCompressCmd)
 	imageCmd.AddCommand(newImageConvertCmd("convert", []string{"x"}))
 }

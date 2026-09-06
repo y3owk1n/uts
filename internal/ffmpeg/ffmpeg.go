@@ -82,7 +82,9 @@ func Check() error {
 //   - VP9 needs -b:v 0 for CRF to mean constant quality, and speed is set via
 //     -cpu-used because it has no -preset
 //   - mp4/mov get +faststart so playback can begin before download ends
-func EncodeArgs(input, out, container string, crf int, preset string) []string {
+//   - maxEdge > 0 adds a scale filter that shrinks the longest edge to at
+//     most that many pixels, never enlarging
+func EncodeArgs(input, out, container string, crf int, preset string, maxEdge int) []string {
 	container = format.Normalize(strings.TrimPrefix(container, "."))
 	vcodec, acodec := format.VideoCodecs(container)
 
@@ -110,6 +112,10 @@ func EncodeArgs(input, out, container string, crf int, preset string) []string {
 		}
 	}
 
+	if maxEdge > 0 {
+		args = append(args, "-vf", ScaleFilter(maxEdge))
+	}
+
 	args = append(args, "-c:a", acodec, "-b:a", "128k")
 
 	if container == "mp4" || container == "mov" || container == "m4v" {
@@ -117,6 +123,15 @@ func EncodeArgs(input, out, container string, crf int, preset string) []string {
 	}
 
 	return append(args, "-y", out)
+}
+
+// ScaleFilter returns an ffmpeg scale filter that caps the longest edge at
+// maxEdge pixels while keeping the aspect ratio and even dimensions. Smaller
+// inputs pass through unchanged.
+func ScaleFilter(maxEdge int) string {
+	edge := strconv.Itoa(maxEdge)
+
+	return "scale='if(gt(iw,ih),min(" + edge + ",iw),-2)':'if(gt(iw,ih),-2,min(" + edge + ",ih))'"
 }
 
 func vp9Speed(preset string) string {
