@@ -27,6 +27,7 @@ var baseTools = []tool{
 	{Name: "ffprobe", Required: false, UsedBy: "info, video convert (stream copy)"},
 	{Name: "gs", Required: false, UsedBy: "pdf compress"},
 	{Name: "pdftoppm", Required: false, UsedBy: "pdf convert (PDF → images)"},
+	{Name: "pdfinfo", Required: false, UsedBy: "info (PDF page count)"},
 	{Name: "pngquant", Required: false, UsedBy: "image compress (PNG)"},
 	{Name: "optipng", Required: false, UsedBy: "image compress (PNG)"},
 	{Name: "jpegoptim", Required: false, UsedBy: "image compress (JPEG)"},
@@ -202,6 +203,7 @@ func brewList() string {
 		"avifenc":      "libavif",
 		"ffprobe":      "ffmpeg",
 		"pdftoppm":     "poppler",
+		"pdfinfo":      "poppler",
 	}
 
 	var pkgs []string
