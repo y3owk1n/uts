@@ -173,7 +173,7 @@ uts audio convert song.flac --to m4a -q high
 
 ### Archive Commands
 
-Builds, extracts, and lists tar, zip, gzip, zstd, xz, and brotli packages:
+Builds, extracts, and lists zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2 and tar.br archives. Compressed tarballs are streamed through a pipe, so no temporary files are written next to the archive:
 
 ```bash
 # Compress a folder to zstd tarball
@@ -182,8 +182,8 @@ uts archive compress ./project/ --algorithm zstd
 # Compress folder to standard zip file
 uts archive compress ./photos/ --algorithm zip
 
-# Extract a zip or tar archive
-uts archive extract backup.zip
+# Extract a zip or tar archive into a directory
+uts archive extract backup.zip -o ./restored/
 
 # List contents of a compressed tarball
 uts archive list project.tar.gz

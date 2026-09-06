@@ -9,7 +9,6 @@ import (
 	"charm.land/log/v2"
 	"github.com/spf13/cobra"
 	"github.com/y3owk1n/uts/internal/archive"
-	"github.com/y3owk1n/uts/internal/compress"
 )
 
 // archiveCmd represents the archive command.
@@ -20,7 +19,7 @@ var archiveCmd = &cobra.Command{
 	Long: `Compress, extract, and list archives.
 
 Supported algorithms: gzip, zstd, xz, brotli, zip
-Archive formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+Archive formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2, tar.br`,
 	Example: `  uts archive compress ./project/ --algorithm zstd
   uts archive extract backup.zip
   uts archive list project.tar.gz`,
@@ -45,7 +44,7 @@ Output saved as <name>.tar.<algo> or <name>.zip.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("compressing archives", "files", args, "algorithm", algorithm)
 
-		return compress.Archive(compress.ArchiveOptions{
+		return archive.Create(archive.CreateOptions{
 			Files:     args,
 			Algorithm: strings.ToLower(algorithm),
 			OutputDir: outputDir,
@@ -61,7 +60,7 @@ var archiveExtractCmd = &cobra.Command{
 	Short:   "Extract archive contents",
 	Long: `Extract archive files to the specified directory.
 
-Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2, tar.br`,
 	Example: `  uts archive extract backup.zip
   uts archive extract project.tar.gz
   uts archive extract '*.tar.zst' -o ./output/
@@ -85,7 +84,7 @@ var archiveListCmd = &cobra.Command{
 	Short:   "List archive contents",
 	Long: `List the contents of archive files without extracting.
 
-Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2`,
+Supported formats: zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2, tar.br`,
 	Example: `  uts archive list backup.zip
   uts archive list project.tar.gz
   uts archive list '*.tar.zst'`,
