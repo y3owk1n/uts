@@ -207,13 +207,21 @@ uts archive list project.tar.gz
 
 ### File Info
 
-Inspects a media file's details and displays context-aware `uts` suggestions. When `ffprobe` is installed, video, audio and image files also show duration, resolution, frame rate, codecs and bit rate:
+Inspects a media file's details and displays context-aware `uts` suggestions. When `ffprobe` is installed, video, audio and image files also show duration, resolution, frame rate, codecs and bit rate. PDFs show their page count via `pdfinfo` or Ghostscript:
 
 ```bash
 uts info video.mp4
 uts info screenshot.png
 uts info ./downloads -r
 ```
+
+`--json` prints one array with the same details, for scripts:
+
+```bash
+uts info clip.mp4 --json | jq '.[0] | {durationSeconds, width, height, videoCodec}'
+```
+
+Fields: `path`, `name`, `sizeBytes`, `size`, `ext`, `category`, `tool`, and when available `durationSeconds`, `duration`, `width`, `height`, `frameRate`, `videoCodec`, `audioCodec`, `sampleRate`, `channels`, `bitRateKbps`, `pages`. An unreadable file has an `error` field and makes the command exit `1`.
 
 ### Top-Level Shortcut
 
