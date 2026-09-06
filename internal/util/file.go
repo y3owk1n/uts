@@ -3,10 +3,12 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -226,8 +228,9 @@ func HasTool(name string) bool {
 }
 
 // CalcOutputPath computes an output path respecting the output directory.
-// When outputDir is non-empty the file is placed there; otherwise it stays
-// next to the input with the given suffix inserted before the extension.
+// When outputDir is non-empty the file is placed there under its own name;
+// otherwise it stays next to the input with the suffix inserted before the
+// extension.
 func CalcOutputPath(input, suffix, outputDir string) string {
 	if outputDir != "" {
 		return filepath.Join(outputDir, filepath.Base(input))
@@ -236,12 +239,21 @@ func CalcOutputPath(input, suffix, outputDir string) string {
 	return OutputPath(input, suffix)
 }
 
+// CalcOutputPathExt is CalcOutputPath for operations that change the
+// extension while keeping the "-suffix" naming (e.g. audio compress to .m4a).
+func CalcOutputPathExt(input, suffix, newExt, outputDir string) string {
+	if outputDir != "" {
+		return filepath.Join(outputDir, ConvertOutputPath(filepath.Base(input), newExt))
+	}
+
+	return OutputPathExt(input, suffix, newExt)
+}
+
 // CalcConvertOutputPath computes a conversion output path respecting the
-// output directory. When outputDir is non-empty the file is placed there;
-// otherwise it stays next to the input with the new extension.
+// output directory. The result always carries the target extension.
 func CalcConvertOutputPath(input, targetExt, outputDir string) string {
 	if outputDir != "" {
-		return filepath.Join(outputDir, filepath.Base(input))
+		return filepath.Join(outputDir, ConvertOutputPath(filepath.Base(input), targetExt))
 	}
 
 	return ConvertOutputPath(input, targetExt)
@@ -256,4 +268,128 @@ func MaybeReplaceOrRemove(compressed, original string) {
 	} else {
 		RemoveInPlace(original)
 	}
+}
+
+// ExpandInputs turns CLI arguments into a flat list of file paths.
+//
+// Glob patterns are expanded (recursive "**" patterns when recursive is set),
+// and directories are replaced by the files they contain: their immediate
+// children by default, or the whole tree when recursive is set. When exts is
+// non-empty only files with one of those extensions are kept from expanded
+// directories, so a stray .DS_Store never becomes an "unsupported format"
+// warning. Explicit file arguments are passed through untouched so a missing
+// file is still reported by the caller.
+func ExpandInputs(args []string, recursive bool, exts []string) []string {
+	var result []string
+
+	for _, path := range ResolveGlobs(args, recursive) {
+		info, err := os.Stat(path)
+		if err != nil || !info.IsDir() {
+			result = append(result, path)
+
+			continue
+		}
+
+		result = append(result, listDir(path, recursive, exts)...)
+	}
+
+	return result
+}
+
+func listDir(dir string, recursive bool, exts []string) []string {
+	var files []string
+
+	keep := func(path string) {
+		if len(exts) == 0 ||
+			slices.Contains(exts, strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))) {
+			files = append(files, path)
+		}
+	}
+
+	if !recursive {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return nil
+		}
+
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				keep(filepath.Join(dir, entry.Name()))
+			}
+		}
+
+		return files
+	}
+
+	//nolint:nilerr // Unreadable entries are skipped, not fatal.
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		if !d.IsDir() {
+			keep(path)
+		}
+
+		return nil
+	})
+
+	return files
+}
+
+// CopyFile copies src to dst, creating or truncating dst.
+func CopyFile(src, dst string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close() //nolint:errcheck
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(out, source)
+	if err != nil {
+		_ = out.Close()
+
+		return err
+	}
+
+	return out.Close()
+}
+
+// Describe renders a command the way a user would type it: program name
+// followed by its arguments, quoting any argument that contains whitespace.
+func Describe(cmd *exec.Cmd) string {
+	parts := make([]string, 0, len(cmd.Args))
+
+	for idx, arg := range cmd.Args {
+		if idx == 0 {
+			arg = filepath.Base(arg)
+		}
+
+		if strings.ContainsAny(arg, " \t'\"") {
+			arg = fmt.Sprintf("%q", arg)
+		}
+
+		parts = append(parts, arg)
+	}
+
+	return strings.Join(parts, " ")
+}
+
+// MagickBin returns the ImageMagick executable to use: "magick" (v7),
+// "convert" (v6), or "" when neither is installed.
+func MagickBin() string {
+	if HasTool("magick") {
+		return "magick"
+	}
+
+	if HasTool("convert") {
+		return "convert"
+	}
+
+	return ""
 }

@@ -2,7 +2,9 @@
 package util
 
 import (
+	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -240,5 +242,125 @@ func TestInPlaceHint(t *testing.T) {
 
 	if got := InPlaceHint(false); got != "" {
 		t.Errorf("InPlaceHint(false) = %q; want \"\"", got)
+	}
+}
+
+// TestCalcConvertOutputPath tests that the target extension is kept with and
+// without an output directory.
+func TestCalcConvertOutputPath(t *testing.T) {
+	tests := []struct{ input, target, outDir, want string }{
+		{"photo.heic", "jpg", "", "photo.jpg"},
+		{"/a/photo.heic", "jpg", "out", filepath.Join("out", "photo.jpg")},
+		{"clip.mov", "mp4", "/tmp/x", "/tmp/x/clip.mp4"},
+	}
+	for _, testCase := range tests {
+		got := CalcConvertOutputPath(testCase.input, testCase.target, testCase.outDir)
+		if got != testCase.want {
+			t.Errorf("CalcConvertOutputPath(%q, %q, %q) = %q; want %q",
+				testCase.input, testCase.target, testCase.outDir, got, testCase.want)
+		}
+	}
+}
+
+// TestCalcOutputPathExt tests suffixed output paths with a new extension.
+func TestCalcOutputPathExt(t *testing.T) {
+	if got := CalcOutputPathExt("track.wav", "small", "m4a", ""); got != "track-small.m4a" {
+		t.Errorf("CalcOutputPathExt = %q; want track-small.m4a", got)
+	}
+
+	want := filepath.Join("out", "track.m4a")
+	if got := CalcOutputPathExt("/x/track.wav", "small", "m4a", "out"); got != want {
+		t.Errorf("CalcOutputPathExt with outDir = %q; want %q", got, want)
+	}
+}
+
+// TestExpandInputs tests glob, directory and extension filtering behavior.
+func TestExpandInputs(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel string) {
+		path := filepath.Join(dir, rel)
+		//nolint:errcheck
+		os.MkdirAll(filepath.Dir(path), 0o755)
+		//nolint:errcheck
+		os.WriteFile(path, nil, 0o644)
+	}
+
+	write("a.png")
+	write("b.jpg")
+	write("notes.txt")
+	write("nested/c.png")
+	write("nested/deeper/d.PNG")
+
+	images := []string{"png", "jpg"}
+
+	tests := []struct {
+		name      string
+		args      []string
+		recursive bool
+		exts      []string
+		want      int
+	}{
+		{"dir shallow filtered", []string{dir}, false, images, 2},
+		{"dir recursive filtered", []string{dir}, true, images, 4},
+		{"dir shallow unfiltered", []string{dir}, false, nil, 3},
+		{"glob", []string{filepath.Join(dir, "*.png")}, false, images, 1},
+		{"recursive glob", []string{filepath.Join(dir, "**", "*.png")}, true, images, 2},
+		{
+			"missing file passes through",
+			[]string{filepath.Join(dir, "missing.png")},
+			false,
+			images,
+			1,
+		},
+		{"no match", []string{filepath.Join(dir, "*.gif")}, false, images, 0},
+	}
+	for _, testCase := range tests {
+		got := ExpandInputs(testCase.args, testCase.recursive, testCase.exts)
+		if len(got) != testCase.want {
+			t.Errorf(
+				"%s: ExpandInputs = %d results %v; want %d",
+				testCase.name,
+				len(got),
+				got,
+				testCase.want,
+			)
+		}
+	}
+}
+
+// TestDescribe tests the human-readable command rendering used by dry runs.
+func TestDescribe(t *testing.T) {
+	cmd := exec.CommandContext(context.Background(), "ffmpeg", "-i", "my clip.mov", "-y", "out.mp4")
+
+	want := `ffmpeg -i "my clip.mov" -y out.mp4`
+	if got := Describe(cmd); got != want {
+		t.Errorf("Describe = %q; want %q", got, want)
+	}
+}
+
+// TestCopyFile tests CopyFile.
+func TestCopyFile(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.bin")
+	dst := filepath.Join(dir, "sub", "dst.bin")
+
+	//nolint:errcheck
+	os.WriteFile(src, []byte("payload"), 0o644)
+	//nolint:errcheck
+	os.MkdirAll(filepath.Dir(dst), 0o755)
+
+	err := CopyFile(src, dst)
+	if err != nil {
+		t.Fatalf("CopyFile: %v", err)
+	}
+
+	data, _ := os.ReadFile(dst)
+	if string(data) != "payload" {
+		t.Errorf("CopyFile content = %q; want payload", data)
+	}
+
+	err = CopyFile(filepath.Join(dir, "nope"), dst)
+	if err == nil {
+		t.Error("CopyFile of missing source should fail")
 	}
 }
