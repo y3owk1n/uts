@@ -69,6 +69,44 @@ func TestRemuxArgs(t *testing.T) {
 	}
 }
 
+func TestParseProgress(t *testing.T) {
+	tests := []struct {
+		line string
+		want float64
+		ok   bool
+	}{
+		{"out_time_us=1500000", 1.5, true},
+		{"out_time_ms=2000000", 2, true},
+		{"out_time_us=N/A", 0, false},
+		{"frame=12", 0, false},
+		{"progress=end", 0, false},
+	}
+	for _, testCase := range tests {
+		got, parsed := ffmpeg.ParseProgress(testCase.line)
+		if parsed != testCase.ok || got != testCase.want {
+			t.Errorf(
+				"ParseProgress(%q) = (%v, %v); want (%v, %v)",
+				testCase.line,
+				got,
+				parsed,
+				testCase.want,
+				testCase.ok,
+			)
+		}
+	}
+}
+
+func TestStepCarriesProgress(t *testing.T) {
+	step := ffmpeg.Step("missing.mp4", "-i", "missing.mp4", "-y", "out.mp4")
+	if step.Progress == nil || step.Progress.Parse == nil {
+		t.Fatal("Step should attach a progress parser")
+	}
+
+	if !slices.Contains(step.Cmd.Args, "-progress") {
+		t.Errorf("Step should request -progress output: %v", step.Cmd.Args)
+	}
+}
+
 func TestCanRemux(t *testing.T) {
 	info := &ffmpeg.Info{Streams: []ffmpeg.Stream{
 		{Type: "video", Codec: "h264"},

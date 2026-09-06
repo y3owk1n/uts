@@ -4,12 +4,15 @@
 package job
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"charm.land/log/v2"
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
@@ -18,7 +21,14 @@ import (
 	"github.com/y3owk1n/uts/internal/util"
 )
 
-const tailLines = 12
+const (
+	tailLines      = 12
+	percent        = 100
+	secondsPerMin  = 60
+	secondsPerHour = 3600
+	// minProgressForETA avoids wild estimates in the first moments.
+	minProgressForETA = 0.02
+)
 
 var errNoOutput = errors.New("no output produced")
 
@@ -28,6 +38,18 @@ type Step struct {
 	Cmd  *exec.Cmd
 	Desc string
 	Fn   func() error
+	// Progress, when set, makes the runner read the command's stdout line
+	// by line and report completion as it goes.
+	Progress *Progress
+}
+
+// Progress describes how to read completion out of a command's stdout.
+type Progress struct {
+	// Total is the amount of work in the same unit Parse returns, e.g.
+	// seconds of media. Zero disables the display but still drains stdout.
+	Total float64
+	// Parse extracts the work done so far from one stdout line.
+	Parse func(line string) (float64, bool)
 }
 
 // Exec builds a command step.
@@ -200,8 +222,24 @@ func execute(job *Job, opts Options) error {
 
 	defer spinner.Stop()
 
+	started := time.Now()
+	report := func(done, total float64) {
+		if total <= 0 {
+			return
+		}
+
+		spinner.SetSuffix(
+			fmt.Sprintf(
+				"%s %s... %s",
+				opts.Verb,
+				job.Input,
+				progressText(done, total, time.Since(started)),
+			),
+		)
+	}
+
 	for _, step := range job.Steps {
-		err := runStep(step)
+		err := runStep(step, report)
 		if err != nil {
 			if !existed {
 				removeFile(job.Output)
@@ -218,7 +256,7 @@ func execute(job *Job, opts Options) error {
 	return nil
 }
 
-func runStep(step Step) error {
+func runStep(step Step, report func(done, total float64)) error {
 	if step.Cmd == nil {
 		log.Debug("step", "desc", step.Desc)
 
@@ -227,12 +265,78 @@ func runStep(step Step) error {
 
 	log.Debug("exec", "cmd", util.Describe(step.Cmd))
 
-	out, err := step.Cmd.CombinedOutput()
+	if step.Progress == nil {
+		out, err := step.Cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %w\n%s", step.Cmd.Args[0], err, tail(out))
+		}
+
+		return nil
+	}
+
+	return runWithProgress(step, report)
+}
+
+// runWithProgress streams the command's stdout through the step's parser so
+// the spinner can show how far along a long encode is. stderr is kept for
+// the error message.
+func runWithProgress(step Step, report func(done, total float64)) error {
+	var stderr bytes.Buffer
+
+	step.Cmd.Stderr = &stderr
+
+	stdout, err := step.Cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("%s: %w\n%s", step.Cmd.Args[0], err, tail(out))
+		return fmt.Errorf("%s: %w", step.Cmd.Args[0], err)
+	}
+
+	err = step.Cmd.Start()
+	if err != nil {
+		return fmt.Errorf("%s: %w", step.Cmd.Args[0], err)
+	}
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		if done, ok := step.Progress.Parse(scanner.Text()); ok {
+			report(done, step.Progress.Total)
+		}
+	}
+
+	err = step.Cmd.Wait()
+	if err != nil {
+		return fmt.Errorf("%s: %w\n%s", step.Cmd.Args[0], err, tail(stderr.Bytes()))
 	}
 
 	return nil
+}
+
+// progressText renders "42% · 1:12 left" from work done, total work and the
+// time spent so far.
+func progressText(done, total float64, elapsed time.Duration) string {
+	frac := min(max(done/total, 0), 1)
+	text := fmt.Sprintf("%3.0f%%", frac*percent)
+
+	if frac > minProgressForETA && frac < 1 {
+		remaining := time.Duration(float64(elapsed) * (1 - frac) / frac).Round(time.Second)
+		text += " · " + clock(remaining) + " left"
+	}
+
+	return text
+}
+
+func clock(dur time.Duration) string {
+	secs := int(dur.Seconds())
+
+	if secs >= secondsPerHour {
+		return fmt.Sprintf(
+			"%d:%02d:%02d",
+			secs/secondsPerHour,
+			secs%secondsPerHour/secondsPerMin,
+			secs%secondsPerMin,
+		)
+	}
+
+	return fmt.Sprintf("%d:%02d", secs/secondsPerMin, secs%secondsPerMin)
 }
 
 // tail keeps the last lines of tool output and drops carriage-return progress
