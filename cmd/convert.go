@@ -1,22 +1,24 @@
-//nolint:goconst
 package cmd
 
 import (
+	"slices"
 	"strings"
 
+	"charm.land/log/v2"
 	"github.com/spf13/cobra"
 	"github.com/y3owk1n/uts/internal/convert"
-	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/format"
 )
 
-// convertCmd represents the convert command.
+// convertCmd is the top-level alias: "uts convert image ..." behaves exactly
+// like "uts image convert ...".
 var convertCmd = &cobra.Command{
 	Use:     "convert",
 	Aliases: []string{"x"},
 	Short:   "Convert between formats",
 	Long: `Convert files between different formats (image, video, audio, pdf).
 
-Requires --to <format> flag to specify the target format.`,
+Requires --to <format> to specify the target format.`,
 	Example: `  uts convert image photo.heic --to jpg
   uts convert video clip.mov --to mp4
   uts convert audio track.wav --to mp3 -q 96
@@ -26,118 +28,178 @@ Requires --to <format> flag to specify the target format.`,
 	},
 }
 
-// convertImageCmd represents the convert image command.
-var convertImageCmd = &cobra.Command{
-	Use:     "image",
-	Aliases: []string{"img", "i"},
-	Short:   "Convert between image formats",
-	Long: `Convert image files between formats.
+func newImageConvertCmd(use string, aliases []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     use,
+		Aliases: aliases,
+		Short:   "Convert between image formats",
+		Long: `Convert image files between formats using ImageMagick (or sips on macOS).
 
-Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
-	Example: `  uts convert image photo.heic --to jpg
-  uts convert image screenshot.png --to webp -q 85
-  uts convert image '*.heic' --to jpg`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if targetFmt == "" {
-			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
-		}
+Target formats: ` + strings.Join(format.ImageTargets, ", "),
+		Example: `  uts image convert photo.heic --to jpg
+  uts image convert screenshot.png --to webp -q high
+  uts image convert photo.jpg --to avif -q 70
+  uts image convert ./photos --to jpg -r`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := requireTarget(format.ImageTargets)
+			if err != nil {
+				return err
+			}
 
-		return convert.Image(convert.ImageOptions{
-			Files:     args,
-			Target:    strings.ToLower(targetFmt),
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
-		})
-	},
+			files, err := inputs(args, format.ImageExts)
+			if err != nil {
+				return err
+			}
+
+			log.Debug("converting image files", "files", files, "target", targetFmt)
+
+			return convert.Image(convert.ImageOptions{
+				Files:     files,
+				Target:    targetFmt,
+				Quality:   quality,
+				OutputDir: outputDir,
+				InPlace:   inPlace,
+				DryRun:    dryRun,
+			})
+		},
+	}
+	addTargetFlag(cmd, format.ImageTargets)
+
+	return cmd
 }
 
-// convertVideoCmd represents the convert video command.
-var convertVideoCmd = &cobra.Command{
-	Use:     "video",
-	Aliases: []string{"v"},
-	Short:   "Convert between video formats",
-	Long: `Convert video files between formats.
+func newVideoConvertCmd(use string, aliases []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     use,
+		Aliases: aliases,
+		Short:   "Convert between video formats",
+		Long: `Convert video files between containers using ffmpeg.
 
-Target formats: mp4, mkv, webm, mov, avi, flv`,
-	Example: `  uts convert video clip.mov --to mp4
-  uts convert video recording.mkv --to webm -q 20`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if targetFmt == "" {
-			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
-		}
+When the source codecs already fit the target container the streams are
+copied without re-encoding: instant and lossless. Pass -q to force a
+re-encode at that quality.
 
-		return convert.Video(convert.VideoOptions{
-			Files:      args,
-			Target:     strings.ToLower(targetFmt),
-			Quality:    quality,
-			QualitySet: cmd.Flags().Changed("quality"),
-			OutputDir:  outputDir,
-			InPlace:    inPlace,
-			DryRun:     dryRun,
-		})
-	},
+Target formats: ` + strings.Join(format.VideoTargets, ", "),
+		Example: `  uts video convert clip.mov --to mp4
+  uts video convert recording.mkv --to webm -q medium
+  uts video convert presentation.avi --to mkv -q 18
+  uts video convert ./clips --to mp4`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := requireTarget(format.VideoTargets)
+			if err != nil {
+				return err
+			}
+
+			files, err := inputs(args, format.VideoExts)
+			if err != nil {
+				return err
+			}
+
+			log.Debug("converting video files", "files", files, "target", targetFmt)
+
+			return convert.Video(convert.VideoOptions{
+				Files:      files,
+				Target:     targetFmt,
+				Quality:    quality,
+				QualitySet: cmd.Flags().Changed("quality"),
+				OutputDir:  outputDir,
+				InPlace:    inPlace,
+				DryRun:     dryRun,
+			})
+		},
+	}
+	addTargetFlag(cmd, format.VideoTargets)
+
+	return cmd
 }
 
-// convertAudioCmd represents the convert audio command.
-var convertAudioCmd = &cobra.Command{
-	Use:     "audio",
-	Aliases: []string{"a"},
-	Short:   "Convert between audio formats",
-	Long: `Convert audio files (or extract audio from video) between formats.
+func newAudioConvertCmd(use string, aliases []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     use,
+		Aliases: aliases,
+		Short:   "Convert between audio formats",
+		Long: `Convert audio files, or extract the audio track of video files, using ffmpeg.
 
-Target formats: mp3, aac, m4a, wav, flac, opus, ogg`,
-	Example: `  uts convert audio track.wav --to mp3 -q 96
-  uts convert audio video.mp4 --to mp3
-  uts convert audio song.flac --to m4a`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if targetFmt == "" {
-			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
-		}
+Target formats: ` + strings.Join(format.AudioTargets, ", "),
+		Example: `  uts audio convert track.wav --to mp3
+  uts audio convert video.mp4 --to mp3
+  uts audio convert song.flac --to m4a -q high
+  uts audio convert ./music --to opus -q 96`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := requireTarget(format.AudioTargets)
+			if err != nil {
+				return err
+			}
 
-		return convert.Audio(convert.AudioOptions{
-			Files:     args,
-			Target:    strings.ToLower(targetFmt),
-			Quality:   quality,
-			OutputDir: outputDir,
-			DryRun:    dryRun,
-		})
-	},
+			files, err := inputs(args, slices.Concat(format.AudioExts, format.VideoExts))
+			if err != nil {
+				return err
+			}
+
+			log.Debug("converting audio files", "files", files, "target", targetFmt)
+
+			return convert.Audio(convert.AudioOptions{
+				Files:     files,
+				Target:    targetFmt,
+				Quality:   quality,
+				OutputDir: outputDir,
+				InPlace:   inPlace,
+				DryRun:    dryRun,
+			})
+		},
+	}
+	addTargetFlag(cmd, format.AudioTargets)
+
+	return cmd
 }
 
-// convertPDFCmd represents the convert PDF command.
-var convertPDFCmd = &cobra.Command{
-	Use:     "pdf",
-	Aliases: []string{"p"},
-	Short:   "Convert PDF to/from images",
-	Long: `Convert PDF documents to images or combine images into PDF.
+func newPDFConvertCmd(use string, aliases []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     use,
+		Aliases: aliases,
+		Short:   "Convert between PDF and images",
+		Long: `Convert PDF documents to images or combine images into a PDF.
 
-Target formats: jpg, png (PDF→images), pdf (images→PDF)`,
-	Example: `  uts convert pdf report.pdf --to jpg
-  uts convert pdf '*.jpg' '*.png' --to pdf`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if targetFmt == "" {
-			return derrors.New(derrors.CodeInvalidInput, "missing --to <format>")
-		}
+PDF → images: writes <basename>/page-*.<ext> next to the PDF (jpg or png)
+images → PDF: combines the images, in order, into a single PDF`,
+		Example: `  uts pdf convert report.pdf --to jpg
+  uts pdf convert slides.pdf --to png -q high
+  uts pdf convert page1.png page2.png --to pdf
+  uts pdf convert './scans/*.jpg' --to pdf`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := requireTarget(format.PDFTargets)
+			if err != nil {
+				return err
+			}
 
-		return convert.PDF(convert.PDFOptions{
-			Files:     args,
-			Target:    strings.ToLower(targetFmt),
-			Quality:   quality,
-			OutputDir: outputDir,
-			DryRun:    dryRun,
-		})
-	},
+			files, err := inputs(args, slices.Concat(format.PDFExts, format.ImageExts))
+			if err != nil {
+				return err
+			}
+
+			log.Debug("converting PDF files", "files", files, "target", targetFmt)
+
+			return convert.PDF(convert.PDFOptions{
+				Files:     files,
+				Target:    targetFmt,
+				Quality:   quality,
+				OutputDir: outputDir,
+				DryRun:    dryRun,
+			})
+		},
+	}
+	addTargetFlag(cmd, format.PDFTargets)
+
+	return cmd
 }
 
 func init() {
-	convertCmd.AddCommand(convertImageCmd)
-	convertCmd.AddCommand(convertVideoCmd)
-	convertCmd.AddCommand(convertAudioCmd)
-	convertCmd.AddCommand(convertPDFCmd)
+	convertCmd.AddCommand(newImageConvertCmd("image", []string{"img", "i"}))
+	convertCmd.AddCommand(newVideoConvertCmd("video", []string{"v"}))
+	convertCmd.AddCommand(newAudioConvertCmd("audio", []string{"a"}))
+	convertCmd.AddCommand(newPDFConvertCmd("pdf", []string{"p"}))
 }

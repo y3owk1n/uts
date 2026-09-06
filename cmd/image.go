@@ -7,8 +7,7 @@ import (
 	"charm.land/log/v2"
 	"github.com/spf13/cobra"
 	"github.com/y3owk1n/uts/internal/compress"
-	"github.com/y3owk1n/uts/internal/convert"
-	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/format"
 )
 
 // imageCmd represents the image command.
@@ -18,8 +17,8 @@ var imageCmd = &cobra.Command{
 	Short:   "Compress and convert image files",
 	Long: `Compress and convert images using format-specific tools.
 
-Input formats: png, jpg, jpeg, webp, gif, bmp, tiff, heic, heif, avif
-Output formats: jpg, png, webp, gif, bmp, tiff, avif`,
+Input formats: ` + strings.Join(format.ImageExts, ", ") + `
+Output formats: ` + strings.Join(format.ImageTargets, ", "),
 	Example: `  uts image compress screenshot.png -q medium
   uts image convert photo.heic --to jpg`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -34,55 +33,27 @@ var imageCompressCmd = &cobra.Command{
 	Short:   "Compress images using format-specific tools",
 	Long: `Compress images using the best available tool for each format.
 
-Tools by format: png (pngquant+optipng), jpg (jpegoptim),
-webp (cwebp), gif (gifsicle), bmp/tiff (ImageMagick),
-heic (heif-convert), avif (cavif/avifenc).
+Tools by format: png (pngquant+optipng), jpg (jpegoptim), webp (cwebp),
+gif (gifsicle), heic (heif-convert), bmp/tiff/avif (ImageMagick).
+ImageMagick is the fallback whenever a dedicated tool is missing.
 
-HEIC files are converted to JPEG.`,
+HEIC files are converted to JPEG. Results that are not smaller than the
+original are reported and, with -i, the original is kept.`,
 	Example: `  uts image compress screenshot.png -q medium
   uts image compress logo.jpg -q high -i
-  uts image compress '*.png' -r
-  uts image compress photo.webp -q 75 --dry-run -v`,
+  uts image compress ./photos -r
+  uts image compress '*.png' -q 75 --dry-run`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Debug("compressing image files", "files", args)
-
-		return compress.Image(compress.ImageOptions{
-			Files:     args,
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
-		})
-	},
-}
-
-// imageConvertCmd represents the image convert command.
-var imageConvertCmd = &cobra.Command{
-	Use:     "convert",
-	Aliases: []string{"x"},
-	Short:   "Convert between image formats",
-	Long: `Convert image files between formats using ImageMagick or sips.
-
-Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
-	Example: `  uts image convert photo.heic --to jpg
-  uts image convert screenshot.png --to webp -q high
-  uts image convert photo.jpg --to avif -q 70
-  uts image convert '*.heic' --to jpg`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if targetFmt == "" {
-			return derrors.New(
-				derrors.CodeInvalidInput,
-				"missing --to <format>. Examples: --to jpg, --to webp, --to png",
-			)
+		files, err := inputs(args, format.ImageExts)
+		if err != nil {
+			return err
 		}
 
-		log.Debug("converting image files", "files", args, "target", targetFmt)
+		log.Debug("compressing image files", "files", files)
 
-		return convert.Image(convert.ImageOptions{
-			Files:     args,
-			Target:    strings.ToLower(targetFmt),
+		return compress.Image(compress.ImageOptions{
+			Files:     files,
 			Quality:   quality,
 			OutputDir: outputDir,
 			InPlace:   inPlace,
@@ -93,5 +64,5 @@ Target formats: jpg, png, webp, gif, bmp, tiff, avif`,
 
 func init() {
 	imageCmd.AddCommand(imageCompressCmd)
-	imageCmd.AddCommand(imageConvertCmd)
+	imageCmd.AddCommand(newImageConvertCmd("convert", []string{"x"}))
 }
