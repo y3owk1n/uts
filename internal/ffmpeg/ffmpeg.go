@@ -14,8 +14,52 @@ import (
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/util"
 )
+
+const microsPerSecond = 1_000_000
+
+// Step builds an ffmpeg job step that reports progress. The input is probed
+// for its duration so the runner can show a percentage and time remaining;
+// without ffprobe the step still runs, just without the numbers.
+func Step(input string, args ...string) job.Step {
+	full := append([]string{"-nostats", "-loglevel", "error", "-progress", "pipe:1"}, args...)
+	step := job.Exec("ffmpeg", full...)
+	step.Progress = &job.Progress{Total: DurationOf(input), Parse: ParseProgress}
+
+	return step
+}
+
+// DurationOf returns the media duration in seconds, or 0 when unknown.
+func DurationOf(file string) float64 {
+	info, err := Probe(file)
+	if err != nil {
+		return 0
+	}
+
+	return info.Duration()
+}
+
+// ParseProgress reads one line of "ffmpeg -progress" output and returns the
+// seconds of output written so far.
+func ParseProgress(line string) (float64, bool) {
+	value, ok := strings.CutPrefix(line, "out_time_us=")
+	if !ok {
+		// Older ffmpeg only prints out_time_ms, which is also microseconds.
+		value, ok = strings.CutPrefix(line, "out_time_ms=")
+		if !ok {
+			return 0, false
+		}
+	}
+
+	micros, err := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
+	if err != nil || micros < 0 {
+		return 0, false
+	}
+
+	return float64(micros) / microsPerSecond, true
+}
 
 // ErrNoProbe is returned when ffprobe is not installed.
 var ErrNoProbe = errors.New("ffprobe not found")

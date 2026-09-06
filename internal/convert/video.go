@@ -76,7 +76,7 @@ func Video(opts VideoOptions) error {
 				return &job.Job{
 					Input:  file,
 					Output: out,
-					Steps:  []job.Step{job.Exec("ffmpeg", ffmpeg.RemuxArgs(file, out, target)...)},
+					Steps:  []job.Step{ffmpeg.Step(file, ffmpeg.RemuxArgs(file, out, target)...)},
 					Note:   "stream copy, no re-encode (pass -q to force re-encoding)",
 				}, nil
 			}
@@ -86,7 +86,7 @@ func Video(opts VideoOptions) error {
 			Input:  file,
 			Output: out,
 			Steps: []job.Step{
-				job.Exec("ffmpeg", ffmpeg.EncodeArgs(file, out, target, crf, preset)...),
+				ffmpeg.Step(file, ffmpeg.EncodeArgs(file, out, target, crf, preset)...),
 			},
 			Note: fmt.Sprintf("%s/%s crf=%d preset=%s", vcodec, acodec, crf, preset),
 		}, nil

@@ -60,7 +60,7 @@ func Audio(opts AudioOptions) error {
 		return &job.Job{
 			Input:  file,
 			Output: out,
-			Steps: []job.Step{job.Exec("ffmpeg",
+			Steps: []job.Step{ffmpeg.Step(file,
 				"-i", file, "-vn", "-c:a", codec, "-b:a", bitrate, "-y", out)},
 			Note: fmt.Sprintf("%s %s → .%s", codec, bitrate, outExt),
 		}, nil

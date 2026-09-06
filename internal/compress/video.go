@@ -65,7 +65,7 @@ func Video(opts VideoOptions) error {
 			Input:  file,
 			Output: out,
 			Steps: []job.Step{
-				job.Exec("ffmpeg", ffmpeg.EncodeArgs(file, out, ext, crf, preset)...),
+				ffmpeg.Step(file, ffmpeg.EncodeArgs(file, out, ext, crf, preset)...),
 			},
 			Note: fmt.Sprintf("%s/%s crf=%d", vcodec, acodec, crf),
 		}, nil

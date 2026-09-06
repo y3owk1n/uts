@@ -85,7 +85,7 @@ A number outside the range for its category is rejected before any tool runs, wi
 
 ### Video Commands
 
-Compression uses `ffmpeg` and keeps the input container: mp4/mov/avi/flv are encoded with H.264, mkv with H.265, and webm with VP9 (constant quality mode).
+Compression uses `ffmpeg` and keeps the input container: mp4/mov/avi/flv are encoded with H.264, mkv with H.265, and webm with VP9 (constant quality mode). While a file encodes, the spinner shows the percentage done and the time remaining (video and audio, when `ffprobe` is available).
 
 ```bash
 # Compress using low quality preset (smaller file)
