@@ -1,13 +1,13 @@
+//nolint:goconst
 package compress
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
-	"path/filepath"
-	"strconv"
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/ffmpeg"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -21,18 +21,16 @@ type VideoOptions struct {
 	DryRun    bool
 }
 
-// Video compresses video files using ffmpeg.
+// Video compresses video files using ffmpeg, keeping the input container.
 func Video(opts VideoOptions) error {
 	crf, preset, err := util.VideoQuality(opts.Quality)
 	if err != nil {
 		return err
 	}
 
-	if !util.HasTool("ffmpeg") {
-		return derrors.New(
-			derrors.CodeToolNotFound,
-			"ffmpeg not found — install: brew install ffmpeg",
-		)
+	err = ffmpeg.Check()
+	if err != nil {
+		return err
 	}
 
 	ui.Message.Infof(
@@ -42,84 +40,34 @@ func Video(opts VideoOptions) error {
 		preset,
 	)
 
-	total := len(opts.Files)
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Compressing",
+		Done:    "Compressed",
+		Noun:    "video files",
+		Compare: true,
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeCompressionFailed,
+	}, func(file string) (*job.Job, error) {
+		ext := format.Ext(file)
+		if format.Classify(ext) != format.Video {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"unsupported video format .%s",
+				ext,
+			)
 		}
 
 		out := util.CalcOutputPath(file, "small", opts.OutputDir)
-		origSize := util.FileSize(file)
+		vcodec, acodec := format.VideoCodecs(ext)
 
-		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
-
-		if opts.DryRun {
-			ui.Message.Infof(
-				"[dry-run] Would compress %s -> %s (crf=%d, preset=%s)%s",
-				file,
-				out,
-				crf,
-				preset,
-				util.InPlaceHint(opts.InPlace),
-			)
-
-			continue
-		}
-
-		err := util.EnsureDir(out)
-		if err != nil {
-			ui.Message.Errorf("Failed to create output directory: %v", err)
-
-			continue
-		}
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		spinner.Start()
-
-		ext := filepath.Ext(file)
-		vcodec, acodec := util.VideoCodecs(ext)
-
-		cmd := exec.CommandContext(
-			context.Background(), "ffmpeg",
-			"-i", file,
-			"-vcodec", vcodec,
-			"-crf", strconv.Itoa(crf),
-			"-preset", preset,
-			"-acodec", acodec,
-			"-b:a", "128k",
-			"-movflags", "+faststart",
-			"-y", out,
-		)
-		output, err := cmd.CombinedOutput()
-
-		spinner.Stop()
-
-		if err == nil && util.FileExists(out) {
-			newSize := util.FileSize(out)
-			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf(
-				"%s: %s → %s %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(newSize),
-				ratio,
-			)
-
-			if opts.InPlace {
-				util.MaybeReplaceOrRemove(out, file)
-			}
-		} else {
-			ui.Message.Errorf("Compression failed: %s", file)
-			ui.Message.Mutedf("ffmpeg: %s", string(output))
-		}
-	}
-
-	if total > 1 {
-		ui.Message.Successf("Compressed %d video files", total)
-	}
-
-	return nil
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps: []job.Step{
+				job.Exec("ffmpeg", ffmpeg.EncodeArgs(file, out, ext, crf, preset)...),
+			},
+			Note: fmt.Sprintf("%s/%s crf=%d", vcodec, acodec, crf),
+		}, nil
+	})
 }

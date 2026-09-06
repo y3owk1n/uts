@@ -1,10 +1,12 @@
+//nolint:goconst
 package compress
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -25,6 +27,13 @@ func PDF(opts PDFOptions) error {
 		return err
 	}
 
+	if !util.HasTool("gs") {
+		return derrors.New(
+			derrors.CodeToolNotFound,
+			"ghostscript not found — install: brew install ghostscript",
+		)
+	}
+
 	if settings != "" {
 		ui.Message.Infof(
 			"PDF compression at %s quality (preset=%s, %d DPI)",
@@ -36,35 +45,24 @@ func PDF(opts PDFOptions) error {
 		ui.Message.Infof("PDF compression at %s quality (%d DPI)", opts.Quality, dpi)
 	}
 
-	total := len(opts.Files)
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Compressing",
+		Done:    "Compressed",
+		Noun:    "PDF files",
+		Compare: true,
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeCompressionFailed,
+	}, func(file string) (*job.Job, error) {
+		if format.Ext(file) != "pdf" {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"not a PDF: .%s",
+				format.Ext(file),
+			)
 		}
 
 		out := util.CalcOutputPath(file, "small", opts.OutputDir)
-		origSize := util.FileSize(file)
-
-		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
-
-		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would compress %s -> %s (settings=%s)", file, out, settings)
-
-			continue
-		}
-
-		err := util.EnsureDir(out)
-		if err != nil {
-			ui.Message.Errorf("Failed to create output directory: %v", err)
-
-			continue
-		}
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		spinner.Start()
 
 		args := []string{
 			"-sDEVICE=pdfwrite",
@@ -77,42 +75,18 @@ func PDF(opts PDFOptions) error {
 			args = append(args, "-dPDFSETTINGS="+settings)
 		}
 
-		args = append(
-			args,
+		args = append(args,
 			fmt.Sprintf("-dColorImageResolution=%d", dpi),
 			fmt.Sprintf("-dGrayImageResolution=%d", dpi),
 			fmt.Sprintf("-dMonoImageResolution=%d", dpi),
 			"-sOutputFile="+out, file,
 		)
 
-		cmd := exec.CommandContext(context.Background(), "gs", args...)
-		output, err := cmd.CombinedOutput()
-
-		spinner.Stop()
-
-		if err == nil && util.FileExists(out) {
-			newSize := util.FileSize(out)
-			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf(
-				"%s: %s → %s %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(newSize),
-				ratio,
-			)
-
-			if opts.InPlace {
-				util.MaybeInPlace(out, file)
-			}
-		} else {
-			ui.Message.Errorf("Compression failed: %s", file)
-			ui.Message.Mutedf("gs: %s", string(output))
-		}
-	}
-
-	if total > 1 {
-		ui.Message.Successf("Compressed %d PDF files", total)
-	}
-
-	return nil
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps:  []job.Step{job.Exec("gs", args...)},
+			Note:   "via ghostscript",
+		}, nil
+	})
 }
