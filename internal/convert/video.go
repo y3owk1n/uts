@@ -1,111 +1,94 @@
+//nolint:goconst
 package convert
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
-	"strings"
+	"slices"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/ffmpeg"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
 
 // VideoOptions represents options for video conversion.
 type VideoOptions struct {
-	Files     []string
-	Target    string
-	OutputDir string
-	InPlace   bool
-	DryRun    bool
+	Files   []string
+	Target  string
+	Quality string
+	// QualitySet is true when the user passed -q explicitly. Without it a
+	// conversion prefers a lossless stream copy whenever the codecs fit the
+	// target container.
+	QualitySet bool
+	OutputDir  string
+	InPlace    bool
+	DryRun     bool
 }
 
-// Video converts video files to the target format.
+// Video converts video files to the target container.
 func Video(opts VideoOptions) error {
-	target := strings.ToLower(opts.Target)
-	switch target {
-	case "mp4", "mkv", "webm", "mov", "avi", "flv":
-	default:
-		ui.Message.Errorf("Unsupported target format: .%s", target)
-
-		return nil
+	target := format.Normalize(opts.Target)
+	if !slices.Contains(format.VideoTargets, target) {
+		return unsupportedTarget(target, format.VideoTargets)
 	}
 
-	vcodec, acodec := util.VideoCodecs("." + target)
-	ui.Message.Infof("Converting video to .%s (%s/%s)", target, vcodec, acodec)
+	crf, preset, err := util.VideoQuality(opts.Quality)
+	if err != nil {
+		return err
+	}
 
-	total := len(opts.Files)
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
+	err = ffmpeg.Check()
+	if err != nil {
+		return err
+	}
 
-			continue
+	vcodec, acodec := format.VideoCodecs(target)
+	ui.Message.Infof("Converting video to .%s (%s/%s, crf=%d)", target, vcodec, acodec, crf)
+
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Converting",
+		Done:    "Converted",
+		Noun:    "video files",
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeConversionFailed,
+	}, func(file string) (*job.Job, error) {
+		ext := format.Ext(file)
+		if format.Classify(ext) != format.Video {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"unsupported video format .%s",
+				ext,
+			)
 		}
 
-		if strings.HasSuffix(strings.ToLower(file), "."+target) {
-			ui.Message.Warnf("Already .%s, skipping: %s", target, file)
-
-			continue
+		if format.Same(ext, target) {
+			return &job.Job{Input: file, Skip: "Already ." + target}, nil
 		}
 
 		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
-		origSize := util.FileSize(file)
 
-		ui.Message.Stepf(
-			"[%d/%d] %s → .%s (%s)",
-			idx+1,
-			total,
-			file,
-			target,
-			util.HumanSize(origSize),
-		)
-
-		if opts.DryRun {
-			ui.Message.Infof(
-				"[dry-run] Would convert %s -> %s%s",
-				file,
-				out,
-				util.InPlaceHint(opts.InPlace),
-			)
-
-			continue
-		}
-
-		_ = util.EnsureDir(out)
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Converting %s...", file))
-		spinner.Start()
-
-		output, err := exec.CommandContext(
-			context.Background(), "ffmpeg",
-			"-i", file,
-			"-vcodec", vcodec,
-			"-acodec", acodec,
-			"-y", out,
-		).CombinedOutput()
-
-		spinner.Stop()
-
-		if err == nil && util.FileExists(out) {
-			ui.Message.Successf(
-				"%s: %s → %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(util.FileSize(out)),
-			)
-
-			if opts.InPlace {
-				util.MaybeReplaceOrRemove(out, file)
+		if !opts.QualitySet {
+			info, probeErr := ffmpeg.Probe(file)
+			if probeErr == nil && ffmpeg.CanRemux(info, target) {
+				return &job.Job{
+					Input:  file,
+					Output: out,
+					Steps:  []job.Step{job.Exec("ffmpeg", ffmpeg.RemuxArgs(file, out, target)...)},
+					Note:   "stream copy, no re-encode (pass -q to force re-encoding)",
+				}, nil
 			}
-		} else {
-			ui.Message.Errorf("Conversion failed: %s", file)
-			ui.Message.Mutedf("ffmpeg: %s", string(output))
 		}
-	}
 
-	if total > 1 {
-		ui.Message.Successf("Converted %d video files", total)
-	}
-
-	return nil
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps: []job.Step{
+				job.Exec("ffmpeg", ffmpeg.EncodeArgs(file, out, target, crf, preset)...),
+			},
+			Note: fmt.Sprintf("%s/%s crf=%d preset=%s", vcodec, acodec, crf, preset),
+		}, nil
+	})
 }

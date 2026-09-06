@@ -88,7 +88,7 @@ uts video compress clip1.mp4 clip2.mp4 clip3.mp4 -q medium
 uts video compress '*.mp4' -r -q medium
 ```
 
-Conversion changes format extensions utilizing the proper encoder wrappers:
+Conversion changes the container. When the source codecs already fit the target (for example H.264 + AAC from a `.mov` into `.mp4`) the streams are copied without re-encoding, which is instant and lossless. Otherwise the video is re-encoded at the `-q` quality. Passing `-q` explicitly always re-encodes.
 
 ```bash
 # Convert QuickTime MOV to MP4
@@ -164,6 +164,9 @@ uts audio compress podcast.wav -q low
 # Convert audio format to MP3
 uts audio convert track.wav --to mp3
 
+# Extract the audio track of a video
+uts audio convert lecture.mp4 --to mp3
+
 # Convert FLAC lossless format to M4A with high preset quality
 uts audio convert song.flac --to m4a -q high
 ```
@@ -210,8 +213,9 @@ uts convert pdf report.pdf --to jpg
 
 ## Output Behavior
 
-- **Default suffix**: Unless `--in-place` is specified, files are written as `<name>-small.<ext>` in the source directory.
-- **Output directories**: When `--output <dir>` is set, target files are written to the destination directory. Suffixes are omitted if output name collisions do not occur.
+- **Default suffix**: Compression writes `<name>-small.<ext>` next to the input. Conversion writes `<name>.<target>` next to the input.
+- **Output directories**: With `--output <dir>`, compression writes `<dir>/<name>.<ext>` and conversion writes `<dir>/<name>.<target>`.
+- **In-place**: `--in-place` replaces the original with the result. For conversions the original is removed and the result takes its base name.
 - **Not smaller**: When a compressed result is not smaller than the original, `uts` says so. With `--in-place` the original is kept and the result discarded.
 - **Priority**: If both `--output` and `--in-place` are defined, `--in-place` is ignored to prevent accidental source deletions.
 - **Failures**: A failed step removes its partial output, every remaining file is still processed, and `uts` exits `1`.

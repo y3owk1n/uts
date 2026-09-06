@@ -71,11 +71,13 @@ Target formats: mp4, mkv, webm, mov, avi, flv`,
 		}
 
 		return convert.Video(convert.VideoOptions{
-			Files:     args,
-			Target:    strings.ToLower(targetFmt),
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
+			Files:      args,
+			Target:     strings.ToLower(targetFmt),
+			Quality:    quality,
+			QualitySet: cmd.Flags().Changed("quality"),
+			OutputDir:  outputDir,
+			InPlace:    inPlace,
+			DryRun:     dryRun,
 		})
 	},
 }

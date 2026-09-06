@@ -52,7 +52,7 @@ uts image convert photo.heic --to jpg
 # Compress video in-place (replaces original recording)
 uts video compress recording.mp4 -i
 
-# Convert MOV video to MP4
+# Convert MOV video to MP4 (stream copy when the codecs fit: instant and lossless)
 uts video convert clip.mov --to mp4
 
 # Convert multiple pages to high-res PNGs
@@ -153,6 +153,7 @@ You don't need to install all of them – `uts` will intelligently work with wha
 - **Dry‑run preview**: Use `-n` (or `--dry-run`) to see exactly what commands would be executed, without making any changes.
 - **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file. A result that is not smaller than the original is never swapped in.
 - **Custom output directory**: Use `-o` (or `--output`) to specify where results are saved.
+- **Lossless video conversion**: `video convert` copies the streams into the new container whenever the codecs allow, so `mov → mp4` takes a second and loses nothing. Pass `-q` to force a re-encode.
 
 For a complete reference, check out the [CLI Guide](docs/CLI.md).
 
