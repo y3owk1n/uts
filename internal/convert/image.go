@@ -22,6 +22,8 @@ type ImageOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// MaxEdge caps the longest edge in pixels; 0 keeps the dimensions.
+	MaxEdge int
 }
 
 // sipsTargets are the formats macOS sips can write, used when ImageMagick is
@@ -40,7 +42,12 @@ func Image(opts ImageOptions) error {
 		return err
 	}
 
-	ui.Message.Infof("Converting images to .%s (quality=%d)", target, quality)
+	ui.Message.Infof(
+		"Converting images to .%s (quality=%d)%s",
+		target,
+		quality,
+		maxNote(opts.MaxEdge),
+	)
 
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Converting",
@@ -65,7 +72,7 @@ func Image(opts ImageOptions) error {
 
 		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
 
-		tool, step, err := imageStep(file, out, ext, target, quality)
+		tool, step, err := imageStep(file, out, ext, target, quality, opts.MaxEdge)
 		if err != nil {
 			return nil, err
 		}
@@ -79,8 +86,9 @@ func Image(opts ImageOptions) error {
 	})
 }
 
-func imageStep(file, out, ext, target string, quality int) (string, job.Step, error) {
-	if target == "avif" && (ext == "png" || ext == "jpg" || ext == "jpeg") {
+func imageStep(file, out, ext, target string, quality, maxEdge int) (string, job.Step, error) {
+	// cavif and avifenc cannot resize, so a size cap goes through ImageMagick.
+	if target == "avif" && maxEdge == 0 && (ext == "png" || ext == "jpg" || ext == "jpeg") {
 		switch {
 		case util.HasTool("cavif"):
 			return "cavif", job.Exec(
@@ -111,14 +119,14 @@ func imageStep(file, out, ext, target string, quality int) (string, job.Step, er
 	}
 
 	if bin := util.MagickBin(); bin != "" {
-		return "ImageMagick", job.Exec(
-			bin,
-			file,
-			"-quality",
-			strconv.Itoa(quality),
-			"-strip",
-			out,
-		), nil
+		args := []string{file}
+		if maxEdge > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx%d>", maxEdge, maxEdge))
+		}
+
+		args = append(args, "-quality", strconv.Itoa(quality), "-strip", out)
+
+		return "ImageMagick", job.Exec(bin, args...), nil
 	}
 
 	if util.HasTool("sips") && slices.Contains(sipsTargets, target) {
@@ -127,11 +135,27 @@ func imageStep(file, out, ext, target string, quality int) (string, job.Step, er
 			sipsFmt = "jpeg"
 		}
 
-		return "sips", job.Exec("sips", "-s", "format", sipsFmt, file, "--out", out), nil
+		args := []string{}
+		if maxEdge > 0 {
+			args = append(args, "-Z", strconv.Itoa(maxEdge))
+		}
+
+		args = append(args, "-s", "format", sipsFmt, file, "--out", out)
+
+		return "sips", job.Exec("sips", args...), nil
 	}
 
 	return "", job.Step{}, derrors.New(derrors.CodeToolNotFound,
 		"ImageMagick not found — install: brew install imagemagick")
+}
+
+// maxNote describes a --max setting for the intro line.
+func maxNote(maxEdge int) string {
+	if maxEdge > 0 {
+		return fmt.Sprintf(", longest edge ≤ %dpx", maxEdge)
+	}
+
+	return ""
 }
 
 func unsupportedTarget(target string, valid []string) error {

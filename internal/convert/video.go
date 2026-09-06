@@ -25,6 +25,8 @@ type VideoOptions struct {
 	OutputDir  string
 	InPlace    bool
 	DryRun     bool
+	// MaxEdge caps the longest edge in pixels; it always implies a re-encode.
+	MaxEdge int
 }
 
 // Video converts video files to the target container.
@@ -45,7 +47,14 @@ func Video(opts VideoOptions) error {
 	}
 
 	vcodec, acodec := format.VideoCodecs(target)
-	ui.Message.Infof("Converting video to .%s (%s/%s, crf=%d)", target, vcodec, acodec, crf)
+	ui.Message.Infof(
+		"Converting video to .%s (%s/%s, crf=%d)%s",
+		target,
+		vcodec,
+		acodec,
+		crf,
+		maxNote(opts.MaxEdge),
+	)
 
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Converting",
@@ -70,7 +79,7 @@ func Video(opts VideoOptions) error {
 
 		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
 
-		if !opts.QualitySet {
+		if !opts.QualitySet && opts.MaxEdge == 0 {
 			info, probeErr := ffmpeg.Probe(file)
 			if probeErr == nil && ffmpeg.CanRemux(info, target) {
 				return &job.Job{
@@ -86,7 +95,9 @@ func Video(opts VideoOptions) error {
 			Input:  file,
 			Output: out,
 			Steps: []job.Step{
-				ffmpeg.Step(file, ffmpeg.EncodeArgs(file, out, target, crf, preset)...),
+				ffmpeg.Step(
+					file,
+					ffmpeg.EncodeArgs(file, out, target, crf, preset, opts.MaxEdge)...),
 			},
 			Note: fmt.Sprintf("%s/%s crf=%d preset=%s", vcodec, acodec, crf, preset),
 		}, nil

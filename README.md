@@ -52,6 +52,9 @@ uts image convert photo.heic --to jpg
 # Compress video in-place (replaces original recording)
 uts video compress recording.mp4 -i
 
+# Downscale a 4K recording to 1080p while compressing
+uts video compress recording.mov --max 1920
+
 # Convert MOV video to MP4 (stream copy when the codecs fit: instant and lossless)
 uts video convert clip.mov --to mp4
 
@@ -156,6 +159,7 @@ You don't need to install all of them – `uts` will intelligently work with wha
 - **Dry‑run preview**: Use `-n` (or `--dry-run`) to print the exact commands that would run, without making any changes.
 - **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file. A result that is not smaller than the original is never swapped in.
 - **Custom output directory**: Use `-o` (or `--output`) to specify where results are saved.
+- **Resize while you compress**: `--max 1920` shrinks images and videos so the longest edge is at most that many pixels. It keeps the aspect ratio and never enlarges.
 - **Lossless video conversion**: `video convert` copies the streams into the new container whenever the codecs allow, so `mov → mp4` takes a second and loses nothing. Pass `-q` to force a re-encode.
 - **Scripting**: `uts` exits `1` when any file fails, `--quiet` prints only warnings and errors, `uts info --json` emits machine-readable details, and `-v` logs every external command it runs. The banner is only shown on a terminal, so piped output stays clean.
 - **Shell completions**: `uts completion zsh|bash|fish` prints a completion script that also completes `--to` and `--algorithm` values. See the [Installation Guide](docs/INSTALLATION.md#shell-completions).

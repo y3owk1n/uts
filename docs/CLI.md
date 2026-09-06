@@ -63,6 +63,7 @@ When both `--output` and `--in-place` are given, `--in-place` is ignored with a 
 | ------------- | ----------------------- | --------------------------------------------------------- | ------- |
 | `--to`        | every `convert` command | Target format. Tab completion lists the valid values.     | _None_  |
 | `--algorithm` | `archive compress`      | Archive algorithm: `zip`, `gzip`, `zstd`, `xz`, `brotli`. | `zip`   |
+| `--max`       | image and video `compress` and `convert` | Shrink so the longest edge is at most this many pixels. Never enlarges, keeps the aspect ratio. Forces a re-encode for video. | _off_   |
 
 ---
 
@@ -102,6 +103,9 @@ uts video compress clip1.mp4 clip2.mp4 clip3.mp4 -q medium
 
 # Compress all MP4 files in subdirectories recursively
 uts video compress '*.mp4' -r -q medium
+
+# Downscale a 4K screen recording to 1080p while compressing
+uts video compress recording.mov --max 1920
 ```
 
 Conversion changes the container. When the source codecs already fit the target (for example H.264 + AAC from a `.mov` into `.mp4`) the streams are copied without re-encoding, which is instant and lossless. Otherwise the video is re-encoded at the `-q` quality. Passing `-q` explicitly always re-encodes.
@@ -133,6 +137,9 @@ uts image compress '**/*.jpg' -r
 
 # Compress HEIC photos down to a smaller profile size
 uts image compress photo.heic -q low
+
+# Shrink photos so the longest edge is 2000px, then compress
+uts image compress ./photos --max 2000 -r
 ```
 
 Conversion handles format shifting (e.g. modern formatting like `avif` or `webp`):
