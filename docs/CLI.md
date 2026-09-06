@@ -151,6 +151,8 @@ uts image compress photo.heic -q low
 uts image compress ./photos --max 2000 -r
 ```
 
+A PNG that pngquant cannot shrink further (typically one it already quantized) is not a failure: the pixels are kept, optipng still runs its lossless pass, and the file is reported as not smaller.
+
 Conversion handles format shifting (e.g. modern formatting like `avif` or `webp`):
 
 ```bash
