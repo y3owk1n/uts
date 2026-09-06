@@ -157,7 +157,8 @@ You don't need to install all of them – `uts` will intelligently work with wha
 - **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file. A result that is not smaller than the original is never swapped in.
 - **Custom output directory**: Use `-o` (or `--output`) to specify where results are saved.
 - **Lossless video conversion**: `video convert` copies the streams into the new container whenever the codecs allow, so `mov → mp4` takes a second and loses nothing. Pass `-q` to force a re-encode.
-- **Scripting**: `uts` exits `1` when any file fails, and `-v` logs every external command it runs.
+- **Scripting**: `uts` exits `1` when any file fails, `--quiet` prints only warnings and errors, and `-v` logs every external command it runs. The banner is only shown on a terminal, so piped output stays clean.
+- **Shell completions**: `uts completion zsh|bash|fish` prints a completion script that also completes `--to` and `--algorithm` values. See the [Installation Guide](docs/INSTALLATION.md#shell-completions).
 
 For a complete reference, check out the [CLI Guide](docs/CLI.md).
 

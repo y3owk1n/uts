@@ -16,6 +16,7 @@ This guide covers installation methods for `uts` and explains how to configure i
     - [Method 2: Nix Flake](#method-2-nix-flake)
     - [Method 3: Go Install](#method-3-go-install)
     - [Method 4: GitHub Release Binaries](#method-4-github-release-binaries)
+- [Shell Completions](#shell-completions)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 
@@ -224,6 +225,26 @@ export PATH="$HOME/go/bin:$PATH"
     ```bash
     chmod +x /usr/local/bin/uts
     ```
+
+---
+
+## Shell Completions
+
+`uts` can generate completion scripts for zsh, bash and fish. They complete subcommands, flags, and the values of `--to` and `--algorithm`.
+
+```bash
+# zsh (add to a directory on your $fpath, then restart the shell)
+uts completion zsh > "${fpath[1]}/_uts"
+
+# bash
+uts completion bash > /etc/bash_completion.d/uts        # Linux
+uts completion bash > "$(brew --prefix)/etc/bash_completion.d/uts"   # macOS with bash-completion
+
+# fish
+uts completion fish > ~/.config/fish/completions/uts.fish
+```
+
+Run `uts completion --help` for the full instructions per shell.
 
 ---
 

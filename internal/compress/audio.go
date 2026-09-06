@@ -39,7 +39,7 @@ func Audio(opts AudioOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Compressing",
 		Done:    "Compressed",
-		Noun:    "audio files",
+		Noun:    "audio file",
 		Compare: true,
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,

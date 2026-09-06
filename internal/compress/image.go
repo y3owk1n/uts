@@ -28,7 +28,7 @@ type ImageOptions struct {
 
 // Image compresses image files using the best tool available per format.
 func Image(opts ImageOptions) error {
-	quality, err := util.PresetVal(opts.Quality, 60, 80, 90)
+	quality, err := util.ImageQuality(opts.Quality)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func Image(opts ImageOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Compressing",
 		Done:    "Compressed",
-		Noun:    "image files",
+		Noun:    "image file",
 		Compare: true,
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,

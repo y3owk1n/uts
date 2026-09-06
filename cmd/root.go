@@ -16,6 +16,7 @@ var (
 	inPlace   bool
 	dryRun    bool
 	verbose   bool
+	quiet     bool
 	recursive bool
 	algorithm string
 	targetFmt string
@@ -62,7 +63,10 @@ func Execute() error {
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if verbose {
 			log.SetLevel(log.DebugLevel)
+			log.SetReportTimestamp(false)
 		}
+
+		ui.SetQuiet(quiet && !verbose)
 
 		if inPlace && outputDir != "" {
 			ui.Message.Warnf("--in-place is ignored when --output is set; originals are kept")
@@ -128,6 +132,8 @@ func init() {
 		"Show the commands that would run without running them")
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
 		"Verbose output (logs every external command)")
+	RootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false,
+		"Only print warnings and errors")
 	RootCmd.PersistentFlags().BoolVarP(&recursive, "recursive", "r", false,
 		"Recurse into directories and expand '**' glob patterns")
 

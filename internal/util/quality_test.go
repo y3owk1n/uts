@@ -143,3 +143,46 @@ func TestPDFDPI(t *testing.T) {
 		}
 	}
 }
+
+// TestQualityRanges tests that out-of-range numeric values are rejected with
+// a clear error instead of being handed to the tool.
+func TestQualityRanges(t *testing.T) {
+	bad := []struct{ kind, level string }{
+		{"image", "0"},
+		{"image", "101"},
+		{"video", "52"},
+		{"audio", "20"},
+		{"audio", "9999"},
+		{"pdf", "10"},
+		{"pdf", "5000"},
+	}
+
+	for _, testCase := range bad {
+		var err error
+
+		switch testCase.kind {
+		case "image":
+			_, err = ImageQuality(testCase.level)
+		case "video":
+			_, _, err = VideoQuality(testCase.level)
+		case "audio":
+			_, err = AudioBitrate(testCase.level)
+		default:
+			_, _, err = PDFDPI(testCase.level)
+		}
+
+		if err == nil {
+			t.Errorf("%s quality %s: expected an out-of-range error", testCase.kind, testCase.level)
+		}
+	}
+
+	val, err := ImageQuality("100")
+	if err != nil || val != 100 {
+		t.Errorf("ImageQuality(100) = %d, %v; want 100, nil", val, err)
+	}
+
+	crf, _, err := VideoQuality("0")
+	if err != nil || crf != 0 {
+		t.Errorf("VideoQuality(0) = %d, %v; want 0, nil", crf, err)
+	}
+}

@@ -57,7 +57,8 @@ type Options struct {
 	Verb string
 	// Done is the past tense used in the summary, e.g. "Compressed".
 	Done string
-	// Noun names the inputs in the summary, e.g. "image files".
+	// Noun names one input in the summary, e.g. "image file"; it is
+	// pluralized as needed.
 	Noun string
 	// Compare reports the size delta and refuses to replace an original with
 	// a larger result.
@@ -289,14 +290,22 @@ func replaceInPlace(job *Job) {
 	}
 }
 
+func plural(count int, noun string) string {
+	if count == 1 {
+		return "1 " + noun
+	}
+
+	return fmt.Sprintf("%d %ss", count, noun)
+}
+
 func summarize(opts Options, done, failed, skipped int, saved int64) {
 	if opts.DryRun {
-		ui.Message.Infof("[dry-run] %d %s previewed, nothing written", done, opts.Noun)
+		ui.Message.Infof("[dry-run] %s previewed, nothing written", plural(done, opts.Noun))
 
 		return
 	}
 
-	msg := fmt.Sprintf("%s %d %s", opts.Done, done, opts.Noun)
+	msg := opts.Done + " " + plural(done, opts.Noun)
 
 	var extra []string
 	if skipped > 0 {

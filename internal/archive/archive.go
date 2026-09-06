@@ -160,7 +160,7 @@ func Extract(opts ExtractOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:   "Extracting",
 		Done:   "Extracted",
-		Noun:   "archives",
+		Noun:   "archive",
 		DryRun: opts.DryRun,
 		Code:   derrors.CodeArchiveFailed,
 	}, func(file string) (*job.Job, error) {

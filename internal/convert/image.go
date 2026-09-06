@@ -35,7 +35,7 @@ func Image(opts ImageOptions) error {
 		return unsupportedTarget(target, format.ImageTargets)
 	}
 
-	quality, err := util.PresetVal(opts.Quality, 60, 80, 90)
+	quality, err := util.ImageQuality(opts.Quality)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func Image(opts ImageOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Converting",
 		Done:    "Converted",
-		Noun:    "image files",
+		Noun:    "image file",
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,
 		Code:    derrors.CodeConversionFailed,
