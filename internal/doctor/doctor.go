@@ -1,6 +1,4 @@
 // Package doctor checks that external tools required by uts are available.
-//
-//nolint:goconst
 package doctor
 
 import (
@@ -8,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -25,7 +24,9 @@ type tool struct {
 
 var baseTools = []tool{
 	{Name: "ffmpeg", Required: true, UsedBy: "video, audio"},
+	{Name: "ffprobe", Required: false, UsedBy: "info, video convert (stream copy)"},
 	{Name: "gs", Required: false, UsedBy: "pdf compress"},
+	{Name: "pdftoppm", Required: false, UsedBy: "pdf convert (PDF → images)"},
 	{Name: "pngquant", Required: false, UsedBy: "image compress (PNG)"},
 	{Name: "optipng", Required: false, UsedBy: "image compress (PNG)"},
 	{Name: "jpegoptim", Required: false, UsedBy: "image compress (JPEG)"},
@@ -39,6 +40,8 @@ var baseTools = []tool{
 	{Name: "zip", Required: false, UsedBy: "archive compress (zip)"},
 	{Name: "unzip", Required: false, UsedBy: "archive extract (zip)"},
 	{Name: "zstd", Required: false, UsedBy: "archive compress/extract (zstd)"},
+	{Name: "brotli", Required: false, UsedBy: "archive compress/extract (brotli)"},
+	{Name: "xz", Required: false, UsedBy: "archive compress/extract (xz)"},
 }
 
 // Run executes the doctor check and prints the results.
@@ -197,14 +200,21 @@ func brewList() string {
 		"magick":       "imagemagick",
 		"heif-convert": "libheif",
 		"avifenc":      "libavif",
-		"cavif":        "cavif",
+		"ffprobe":      "ffmpeg",
+		"pdftoppm":     "poppler",
 	}
 
-	for i, n := range names {
-		if mapped, ok := remap[n]; ok {
-			names[i] = mapped
+	var pkgs []string
+
+	for _, name := range names {
+		if mapped, ok := remap[name]; ok {
+			name = mapped
+		}
+
+		if !slices.Contains(pkgs, name) {
+			pkgs = append(pkgs, name)
 		}
 	}
 
-	return strings.Join(names, " ")
+	return strings.Join(pkgs, " ")
 }
