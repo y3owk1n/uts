@@ -151,7 +151,7 @@ You don't need to install all of them – `uts` will intelligently work with wha
 
 - **Batch processing**: Combine with the `-r` (or `--recursive`) flag to process entire directory trees.
 - **Dry‑run preview**: Use `-n` (or `--dry-run`) to see exactly what commands would be executed, without making any changes.
-- **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file.
+- **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file. A result that is not smaller than the original is never swapped in.
 - **Custom output directory**: Use `-o` (or `--output`) to specify where results are saved.
 
 For a complete reference, check out the [CLI Guide](docs/CLI.md).

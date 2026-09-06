@@ -1,11 +1,13 @@
+//nolint:goconst
 package compress
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/ffmpeg"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -19,96 +21,48 @@ type AudioOptions struct {
 	DryRun    bool
 }
 
-// Audio compresses audio files using ffmpeg.
+// Audio compresses audio files using ffmpeg. Lossy inputs keep their format;
+// lossless inputs (wav, flac) become AAC in an .m4a container.
 func Audio(opts AudioOptions) error {
 	bitrate, err := util.AudioBitrate(opts.Quality)
 	if err != nil {
 		return err
 	}
 
-	if !util.HasTool("ffmpeg") {
-		return derrors.New(
-			derrors.CodeToolNotFound,
-			"ffmpeg not found — install: brew install ffmpeg",
-		)
+	err = ffmpeg.Check()
+	if err != nil {
+		return err
 	}
 
-	ui.Message.Infof(
-		"Audio compression at %s quality (bitrate=%s, codec=aac)",
-		opts.Quality,
-		bitrate,
-	)
-	total := len(opts.Files)
+	ui.Message.Infof("Audio compression at %s quality (bitrate=%s)", opts.Quality, bitrate)
 
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
-		}
-
-		out := util.CalcOutputPath(file, "small", opts.OutputDir)
-		origSize := util.FileSize(file)
-
-		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, total, file, util.HumanSize(origSize))
-
-		if opts.DryRun {
-			ui.Message.Infof(
-				"[dry-run] Would compress %s -> %s (bitrate=%s)%s",
-				file,
-				out,
-				bitrate,
-				util.InPlaceHint(opts.InPlace),
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Compressing",
+		Done:    "Compressed",
+		Noun:    "audio files",
+		Compare: true,
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeCompressionFailed,
+	}, func(file string) (*job.Job, error) {
+		ext := format.Ext(file)
+		if format.Classify(ext) != format.Audio {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"unsupported audio format .%s",
+				ext,
 			)
-
-			continue
 		}
 
-		err := util.EnsureDir(out)
-		if err != nil {
-			ui.Message.Errorf("Failed to create output directory: %v", err)
+		codec, outExt := format.AudioCompressTarget(ext)
+		out := util.CalcOutputPathExt(file, "small", outExt, opts.OutputDir)
 
-			continue
-		}
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Compressing %s...", file))
-		spinner.Start()
-
-		cmd := exec.CommandContext(
-			context.Background(), "ffmpeg",
-			"-i", file,
-			"-c:a", "aac",
-			"-b:a", bitrate,
-			"-y", out,
-		)
-		output, err := cmd.CombinedOutput()
-
-		spinner.Stop()
-
-		if err == nil && util.FileExists(out) {
-			newSize := util.FileSize(out)
-			ratio := util.CompressionRatio(origSize, newSize)
-			ui.Message.Successf(
-				"%s: %s → %s %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(newSize),
-				ratio,
-			)
-
-			if opts.InPlace {
-				util.MaybeReplaceOrRemove(out, file)
-			}
-		} else {
-			ui.Message.Errorf("Compression failed: %s", file)
-			ui.Message.Mutedf("ffmpeg: %s", string(output))
-		}
-	}
-
-	if total > 1 {
-		ui.Message.Successf("Compressed %d audio files", total)
-	}
-
-	return nil
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps: []job.Step{job.Exec("ffmpeg",
+				"-i", file, "-vn", "-c:a", codec, "-b:a", bitrate, "-y", out)},
+			Note: fmt.Sprintf("%s %s → .%s", codec, bitrate, outExt),
+		}, nil
+	})
 }

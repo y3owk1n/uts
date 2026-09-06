@@ -69,7 +69,7 @@ The `-q, --quality` flag converts high-level presets (`low`, `medium`, `high`) t
 
 ### Video Commands
 
-Compression uses `ffmpeg` with `libx265` to output highly compressed HEVC files.
+Compression uses `ffmpeg` and keeps the input container: mp4/mov/avi/flv are encoded with H.264, mkv with H.265, and webm with VP9 (constant quality mode).
 
 ```bash
 # Compress using low quality preset (smaller file)
@@ -155,10 +155,10 @@ uts pdf convert page1.png page2.png page3.jpg --to pdf
 
 ### Audio Commands
 
-Processes file compression and bitrates through `ffmpeg`:
+Processes file compression and bitrates through `ffmpeg`. Lossy inputs (`mp3`, `ogg`, `opus`, `m4a`) are re-encoded in their own format, while lossless inputs (`wav`, `flac`) and everything else become AAC in an `.m4a` container:
 
 ```bash
-# Compress WAV file down to small audio profile
+# Compress WAV file down to small audio profile (writes podcast-small.m4a)
 uts audio compress podcast.wav -q low
 
 # Convert audio format to MP3
@@ -212,7 +212,10 @@ uts convert pdf report.pdf --to jpg
 
 - **Default suffix**: Unless `--in-place` is specified, files are written as `<name>-small.<ext>` in the source directory.
 - **Output directories**: When `--output <dir>` is set, target files are written to the destination directory. Suffixes are omitted if output name collisions do not occur.
+- **Not smaller**: When a compressed result is not smaller than the original, `uts` says so. With `--in-place` the original is kept and the result discarded.
 - **Priority**: If both `--output` and `--in-place` are defined, `--in-place` is ignored to prevent accidental source deletions.
+- **Failures**: A failed step removes its partial output, every remaining file is still processed, and `uts` exits `1`.
+- **Dry run**: `--dry-run` prints the exact external commands that would run for each file.
 
 ---
 
