@@ -45,11 +45,14 @@ Quality: high (400 DPI, /printer), medium (300 DPI, /ebook), low (150 DPI, /scre
 		log.Debug("compressing PDF files", "files", files)
 
 		return compress.PDF(compress.PDFOptions{
-			Files:     files,
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
+			Files:        files,
+			Quality:      quality,
+			OutputDir:    outputDir,
+			InPlace:      inPlace,
+			DryRun:       dryRun,
+			Jobs:         jobs,
+			SkipExisting: skipExisting,
+			Backup:       backup,
 		})
 	},
 }

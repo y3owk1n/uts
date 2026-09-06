@@ -20,6 +20,10 @@ type AudioOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// Jobs, SkipExisting and Backup are passed through to job.Options.
+	Jobs         int
+	SkipExisting bool
+	Backup       bool
 }
 
 // Audio converts audio files, or extracts the audio track of video files, to
@@ -47,12 +51,15 @@ func Audio(opts AudioOptions) error {
 	}
 
 	return job.Run(opts.Files, job.Options{
-		Verb:    "Converting",
-		Done:    "Converted",
-		Noun:    "audio file",
-		InPlace: opts.InPlace,
-		DryRun:  opts.DryRun,
-		Code:    derrors.CodeConversionFailed,
+		Verb:         "Converting",
+		Done:         "Converted",
+		Noun:         "audio file",
+		InPlace:      opts.InPlace,
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeConversionFailed,
 	}, func(file string) (*job.Job, error) {
 		ext := format.Ext(file)
 		if cat := format.Classify(ext); cat != format.Audio && cat != format.Video {

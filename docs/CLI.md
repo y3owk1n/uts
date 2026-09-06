@@ -52,6 +52,9 @@ These options apply to commands across all categories:
 | `-v` | `--verbose`   | Log every external command that runs, plus debug output.                         | `false`            |
 |      | `--quiet`     | Print only warnings and errors. Spinners and progress are suppressed too.        | `false`            |
 | `-r` | `--recursive` | Walk directories recursively and expand `**` glob patterns.                      | `false`            |
+| `-j` | `--jobs`      | Process this many files at once. `0` means one per CPU core. Best for image, audio and PDF batches; ffmpeg already uses every core for a single video. | `1` |
+|      | `--skip-existing` | Skip files whose output already exists, so an interrupted batch can be re-run. | `false`        |
+|      | `--backup`    | With `--in-place`, keep the original as `<name>.bak`.                            | `false`            |
 | `-h` | `--help`      | Display syntax, actions, and options helper info.                                |                    |
 |      | `--version`   | Display version, commit hash, and build timestamp.                               |                    |
 
@@ -104,6 +107,9 @@ uts video compress clip1.mp4 clip2.mp4 clip3.mp4 -q medium
 # Compress all MP4 files in subdirectories recursively
 uts video compress '*.mp4' -r -q medium
 
+# Replace originals but keep a .bak copy of each
+uts video compress ./clips -i --backup
+
 # Downscale a 4K screen recording to 1080p while compressing
 uts video compress recording.mov --max 1920
 ```
@@ -134,6 +140,9 @@ uts image compress logo.jpg -q high -i
 
 # Find and compress all JPG files recursively
 uts image compress '**/*.jpg' -r
+
+# Compress a large folder using every core, resumable if interrupted
+uts image compress ./photos -r -j 0 --skip-existing
 
 # Compress HEIC photos down to a smaller profile size
 uts image compress photo.heic -q low
@@ -247,7 +256,9 @@ uts convert pdf report.pdf --to jpg
 
 - **Default suffix**: Compression writes `<name>-small.<ext>` next to the input. Conversion writes `<name>.<target>` next to the input.
 - **Output directories**: With `--output <dir>`, compression writes `<dir>/<name>.<ext>` and conversion writes `<dir>/<name>.<target>`.
-- **In-place**: `--in-place` replaces the original with the result. For conversions the original is removed and the result takes its base name.
+- **In-place**: `--in-place` replaces the original with the result. For conversions the original is removed and the result takes its base name. Add `--backup` to keep the original as `<name>.bak`.
+- **Resuming**: `--skip-existing` leaves any file alone whose output is already on disk, so re-running the same command after an interruption only processes what is left.
+- **Parallelism**: `-j 4` runs four files at once. Each file's messages are printed together when it finishes, so output never interleaves.
 - **Not smaller**: When a compressed result is not smaller than the original, `uts` says so. With `--in-place` the original is kept and the result discarded.
 - **Priority**: If both `--output` and `--in-place` are defined, `--in-place` is ignored to prevent accidental source deletions.
 - **Failures**: A failed step removes its partial output, every remaining file is still processed, and `uts` exits `1`.

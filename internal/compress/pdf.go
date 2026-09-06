@@ -18,6 +18,10 @@ type PDFOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// Jobs, SkipExisting and Backup are passed through to job.Options.
+	Jobs         int
+	SkipExisting bool
+	Backup       bool
 }
 
 // PDF compresses PDF files using Ghostscript.
@@ -46,13 +50,16 @@ func PDF(opts PDFOptions) error {
 	}
 
 	return job.Run(opts.Files, job.Options{
-		Verb:    "Compressing",
-		Done:    "Compressed",
-		Noun:    "PDF file",
-		Compare: true,
-		InPlace: opts.InPlace,
-		DryRun:  opts.DryRun,
-		Code:    derrors.CodeCompressionFailed,
+		Verb:         "Compressing",
+		Done:         "Compressed",
+		Noun:         "PDF file",
+		Compare:      true,
+		InPlace:      opts.InPlace,
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeCompressionFailed,
 	}, func(file string) (*job.Job, error) {
 		if format.Ext(file) != "pdf" {
 			return nil, derrors.Newf(

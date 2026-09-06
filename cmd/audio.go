@@ -51,11 +51,14 @@ Quality: high (192k), medium (128k), low (96k), or raw kbps.`,
 		log.Debug("compressing audio files", "files", files)
 
 		return compress.Audio(compress.AudioOptions{
-			Files:     files,
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
+			Files:        files,
+			Quality:      quality,
+			OutputDir:    outputDir,
+			InPlace:      inPlace,
+			DryRun:       dryRun,
+			Jobs:         jobs,
+			SkipExisting: skipExisting,
+			Backup:       backup,
 		})
 	},
 }
