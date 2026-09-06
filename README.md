@@ -67,6 +67,9 @@ uts audio convert track.wav --to mp3 -q high
 # Compress PDF document to a medium-res profile
 uts pdf compress draft.pdf -q medium
 
+# Compress every image in a folder tree
+uts image compress ./photos -r
+
 # Compress folder to a zstd tarball archive
 uts archive compress ./project/ --algorithm zstd
 
@@ -149,11 +152,12 @@ You don't need to install all of them – `uts` will intelligently work with wha
 
 ## Advanced Usage
 
-- **Batch processing**: Combine with the `-r` (or `--recursive`) flag to process entire directory trees.
-- **Dry‑run preview**: Use `-n` (or `--dry-run`) to see exactly what commands would be executed, without making any changes.
+- **Batch processing**: Pass files, directories, or quoted globs. A directory expands to the media files inside it, and `-r` (or `--recursive`) walks the whole tree.
+- **Dry‑run preview**: Use `-n` (or `--dry-run`) to print the exact commands that would run, without making any changes.
 - **In‑place replacement**: Use `-i` (or `--in-place`) to overwrite the original file. A result that is not smaller than the original is never swapped in.
 - **Custom output directory**: Use `-o` (or `--output`) to specify where results are saved.
 - **Lossless video conversion**: `video convert` copies the streams into the new container whenever the codecs allow, so `mov → mp4` takes a second and loses nothing. Pass `-q` to force a re-encode.
+- **Scripting**: `uts` exits `1` when any file fails, and `-v` logs every external command it runs.
 
 For a complete reference, check out the [CLI Guide](docs/CLI.md).
 

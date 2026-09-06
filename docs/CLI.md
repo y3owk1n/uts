@@ -17,6 +17,12 @@ Where:
 - `<input...>` is one or more file paths, directories, or glob patterns.
 - `[options]` are flags modifying the default behavior.
 
+Inputs are expanded before anything runs:
+
+- Quoted glob patterns (`'*.png'`, `'**/*.jpg'` with `-r`) are resolved by `uts`, so they work the same in every shell.
+- A directory expands to the files it contains that the command supports (an image command ignores `.txt` files, for example). With `-r` the whole tree is walked.
+- Explicit file paths are used as given. A missing file is reported and counted as a failure.
+
 ---
 
 ## Categories & Actions
@@ -44,11 +50,18 @@ These options apply to commands across all categories:
 | `-i` | `--in-place`  | Replace the original source file with the processed version.                     | `false`            |
 | `-n` | `--dry-run`   | Print the compiled command without executing it.                                 | `false`            |
 | `-v` | `--verbose`   | Output raw debug logs and tool output commands.                                  | `false`            |
-| `-r` | `--recursive` | Evaluate recursive glob patterns (e.g., `**/*.png`).                             | `false`            |
-|      | `--algorithm` | Archive type algorithm selection (e.g., `gzip`, `zstd`, `xz`, `brotli`, `zip`).  | `zip`              |
-|      | `--to`        | Target format file extension when performing conversion.                         | _None_             |
+| `-r` | `--recursive` | Walk directories recursively and expand `**` glob patterns.                      | `false`            |
 | `-h` | `--help`      | Display syntax, actions, and options helper info.                                |                    |
 |      | `--version`   | Display version, commit hash, and build timestamp.                               |                    |
+
+When both `--output` and `--in-place` are given, `--in-place` is ignored with a warning so originals are never deleted.
+
+### Command Options
+
+| Flag          | Commands                | Description                                               | Default |
+| ------------- | ----------------------- | --------------------------------------------------------- | ------- |
+| `--to`        | every `convert` command | Target format. Tab completion lists the valid values.     | _None_  |
+| `--algorithm` | `archive compress`      | Archive algorithm: `zip`, `gzip`, `zstd`, `xz`, `brotli`. | `zip`   |
 
 ---
 
@@ -196,6 +209,7 @@ Inspects a media file's details (duration, codecs, resolution, file size) and di
 ```bash
 uts info video.mp4
 uts info screenshot.png
+uts info ./downloads -r
 ```
 
 ### Top-Level Shortcut
@@ -230,7 +244,7 @@ uts convert pdf report.pdf --to jpg
 | Code    | Meaning                                                                            |
 | ------- | ---------------------------------------------------------------------------------- |
 | **`0`** | Success. All input files processed cleanly.                                        |
-| **`1`** | Failure. One or more operations failed, or required dependency tools were missing. |
+| **`1`** | Failure. One or more files failed, no input matched, or a required tool was missing. |
 
 ---
 

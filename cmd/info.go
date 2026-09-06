@@ -7,25 +7,24 @@ import (
 
 // infoCmd represents the info command.
 var infoCmd = &cobra.Command{
-	Use:   "info",
+	Use:   "info <input...>",
 	Short: "Show file info and suggestions",
 	Long: `Show file info and suggestions for compression/conversion.
 
-USAGE
-  uts info <input...> [options]
-
-DESCRIPTION
-  Displays file size, type, and suggests the best compress/convert
-  command for the detected format.
-
-EXAMPLES
-  uts info video.mp4
+Displays size, type and category, and suggests the best compress and
+convert command for the detected format.`,
+	Example: `  uts info video.mp4
   uts info '*.png'
-  uts info photo.heic`,
+  uts info ./downloads -r`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		files, err := inputs(args, nil)
+		if err != nil {
+			return err
+		}
+
 		info.Show(info.Options{
-			Files:   args,
+			Files:   files,
 			Version: Version,
 		})
 
