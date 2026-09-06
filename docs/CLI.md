@@ -49,7 +49,8 @@ These options apply to commands across all categories:
 | `-o` | `--output`    | Destination directory.                                                           | Same as input file |
 | `-i` | `--in-place`  | Replace the original source file with the processed version.                     | `false`            |
 | `-n` | `--dry-run`   | Print the compiled command without executing it.                                 | `false`            |
-| `-v` | `--verbose`   | Output raw debug logs and tool output commands.                                  | `false`            |
+| `-v` | `--verbose`   | Log every external command that runs, plus debug output.                         | `false`            |
+|      | `--quiet`     | Print only warnings and errors. Spinners and progress are suppressed too.        | `false`            |
 | `-r` | `--recursive` | Walk directories recursively and expand `**` glob patterns.                      | `false`            |
 | `-h` | `--help`      | Display syntax, actions, and options helper info.                                |                    |
 |      | `--version`   | Display version, commit hash, and build timestamp.                               |                    |
@@ -74,7 +75,9 @@ The `-q, --quality` flag converts high-level presets (`low`, `medium`, `high`) t
 | **`high`**   | `23` (Slow, best quality)  | `192k`                   | `90%`                  | `400 DPI` (`/printer`)     |
 | **`medium`** | `28` (Balanced speed/size) | `128k`                   | `80%`                  | `300 DPI` (`/ebook`)       |
 | **`low`**    | `32` (Fast, smallest size) | `96k`                    | `60%`                  | `150 DPI` (`/screen`)      |
-| **`<num>`**  | Raw CRF (`0` to `51`)      | Raw bitrate (e.g. `256`) | Quality (`1` to `100`) | Raw DPI (e.g. `72`, `600`) |
+| **`<num>`**  | Raw CRF (`0` to `51`)      | Raw kbps (`32` to `512`) | Quality (`1` to `100`) | Raw DPI (`36` to `1200`)   |
+
+A number outside the range for its category is rejected before any tool runs, with a message naming the valid range.
 
 ---
 

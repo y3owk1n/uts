@@ -71,7 +71,7 @@ func pdfToImages(opts PDFOptions, target string) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:   "Extracting",
 		Done:   "Extracted",
-		Noun:   "PDF files",
+		Noun:   "PDF file",
 		DryRun: opts.DryRun,
 		Code:   derrors.CodeConversionFailed,
 	}, func(file string) (*job.Job, error) {

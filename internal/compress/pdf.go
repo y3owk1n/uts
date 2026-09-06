@@ -48,7 +48,7 @@ func PDF(opts PDFOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Compressing",
 		Done:    "Compressed",
-		Noun:    "PDF files",
+		Noun:    "PDF file",
 		Compare: true,
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,

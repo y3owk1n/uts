@@ -34,7 +34,8 @@ func Run(version string) {
 		tbl.Row(v.Section, v.Name, ui.Message.Accent(v.Value))
 	}
 
-	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(version))
+	ui.PrintBanner(version)
+
 	_, _ = lipgloss.Fprintln(os.Stdout)
 	_, _ = lipgloss.Fprint(os.Stdout, tbl.Render(palette))
 }

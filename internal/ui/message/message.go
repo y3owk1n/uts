@@ -41,6 +41,15 @@ type Printer struct {
 	icons   Icons
 	out     io.Writer
 	errOut  io.Writer
+	quiet   bool
+	// afterError is set by Errorf so the muted detail that follows it is
+	// shown even in quiet mode.
+	afterError bool
+}
+
+// SetQuiet suppresses everything except warnings and errors.
+func (pr *Printer) SetQuiet(quiet bool) {
+	pr.quiet = quiet
 }
 
 // New creates a new Printer.
@@ -72,11 +81,19 @@ func Default() *Printer {
 
 // Infof prints an info message.
 func (pr *Printer) Infof(format string, args ...any) {
+	if pr.quiet {
+		return
+	}
+
 	pr.line(pr.out, pr.icons.Info, fmt.Sprintf(format, args...), pr.palette.Accent)
 }
 
 // Successf prints a success message.
 func (pr *Printer) Successf(format string, args ...any) {
+	if pr.quiet {
+		return
+	}
+
 	pr.line(pr.out, pr.icons.Success, fmt.Sprintf(format, args...), pr.palette.Success)
 }
 
@@ -87,16 +104,25 @@ func (pr *Printer) Warnf(format string, args ...any) {
 
 // Errorf prints an error message.
 func (pr *Printer) Errorf(format string, args ...any) {
+	pr.afterError = true
 	pr.line(pr.errOut, pr.icons.Error, fmt.Sprintf(format, args...), pr.palette.Error)
 }
 
 // Stepf prints a step message.
 func (pr *Printer) Stepf(format string, args ...any) {
+	if pr.quiet {
+		return
+	}
+
 	pr.line(pr.out, pr.icons.Step, fmt.Sprintf(format, args...), pr.palette.Primary)
 }
 
 // Bulletf prints a bullet point.
 func (pr *Printer) Bulletf(format string, args ...any) {
+	if pr.quiet {
+		return
+	}
+
 	styled := lipgloss.NewStyle().
 		Foreground(pr.palette.Muted).
 		Render("  " + pr.icons.Bullet + " " + fmt.Sprintf(format, args...))
@@ -104,14 +130,24 @@ func (pr *Printer) Bulletf(format string, args ...any) {
 	lipgloss.Fprintln(pr.out, styled)
 }
 
-// Mutedf prints a muted message.
+// Mutedf prints a muted message. Muted lines that follow an error (tool
+// output) still print in quiet mode because they explain the failure.
 func (pr *Printer) Mutedf(format string, args ...any) {
+	if pr.quiet && !pr.afterError {
+		return
+	}
+
+	pr.afterError = false
 	//nolint:errcheck
 	lipgloss.Fprintln(pr.out, pr.types.Muted.Render(fmt.Sprintf(format, args...)))
 }
 
 // Pair prints a key-value pair.
 func (pr *Printer) Pair(key, value string) {
+	if pr.quiet {
+		return
+	}
+
 	styledKey := pr.types.Key.Render(key)
 	styledVal := pr.types.Code.Render(value)
 	//nolint:errcheck

@@ -48,7 +48,7 @@ var baseTools = []tool{
 func Run(version string) {
 	palette := ui.Style.Palette()
 
-	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(version))
+	ui.PrintBanner(version)
 
 	missing := 0
 	found := 0

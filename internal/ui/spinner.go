@@ -72,7 +72,7 @@ func (s *Spinner) SetSuffix(suffix string) {
 
 // Start starts the spinner animation.
 func (s *Spinner) Start() {
-	if !s.isTerminal {
+	if !s.isTerminal || quiet {
 		return
 	}
 

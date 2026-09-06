@@ -28,7 +28,7 @@ type Options struct {
 // Show displays information about the given files. It returns an error when
 // any file could not be read so the CLI exits non-zero.
 func Show(opts Options) error {
-	_, _ = lipgloss.Fprint(os.Stdout, ui.Banner.Logo(opts.Version))
+	ui.PrintBanner(opts.Version)
 
 	palette := ui.Style.Palette()
 	failed := 0

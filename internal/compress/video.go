@@ -43,7 +43,7 @@ func Video(opts VideoOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Compressing",
 		Done:    "Compressed",
-		Noun:    "video files",
+		Noun:    "video file",
 		Compare: true,
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,

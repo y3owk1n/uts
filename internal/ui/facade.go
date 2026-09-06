@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
 	"github.com/y3owk1n/uts/internal/ui/banner"
 	"github.com/y3owk1n/uts/internal/ui/message"
@@ -57,4 +58,24 @@ func (tableAPI) New(headers ...string) *table.Table { return table.New(headers..
 // IsTTY reports whether the output is a terminal.
 func IsTTY() bool {
 	return term.IsTerminal(os.Stdout.Fd())
+}
+
+var quiet bool
+
+// SetQuiet silences informational output and spinners; warnings and errors
+// still print.
+func SetQuiet(on bool) {
+	quiet = on
+
+	Message.SetQuiet(on)
+}
+
+// PrintBanner prints the logo banner when stdout is a terminal and output is
+// not quiet, so piped output stays parseable.
+func PrintBanner(version string) {
+	if quiet || !IsTTY() {
+		return
+	}
+
+	_, _ = lipgloss.Fprint(os.Stdout, Banner.Logo(version))
 }

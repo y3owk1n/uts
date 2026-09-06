@@ -49,7 +49,7 @@ func Audio(opts AudioOptions) error {
 	return job.Run(opts.Files, job.Options{
 		Verb:    "Converting",
 		Done:    "Converted",
-		Noun:    "audio files",
+		Noun:    "audio file",
 		InPlace: opts.InPlace,
 		DryRun:  opts.DryRun,
 		Code:    derrors.CodeConversionFailed,
