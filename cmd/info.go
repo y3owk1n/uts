@@ -11,7 +11,8 @@ var infoCmd = &cobra.Command{
 	Short: "Show file info and suggestions",
 	Long: `Show file info and suggestions for compression/conversion.
 
-Displays size, type and category, and suggests the best compress and
+Displays size, type and category. For video, audio and images ffprobe adds
+duration, resolution, codecs and bit rate. Suggests the best compress and
 convert command for the detected format.`,
 	Example: `  uts info video.mp4
   uts info '*.png'
@@ -23,11 +24,9 @@ convert command for the detected format.`,
 			return err
 		}
 
-		info.Show(info.Options{
+		return info.Show(info.Options{
 			Files:   files,
 			Version: Version,
 		})
-
-		return nil
 	},
 }

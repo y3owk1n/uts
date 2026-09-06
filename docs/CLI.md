@@ -204,7 +204,7 @@ uts archive list project.tar.gz
 
 ### File Info
 
-Inspects a media file's details (duration, codecs, resolution, file size) and displays context-aware `uts` suggestions:
+Inspects a media file's details and displays context-aware `uts` suggestions. When `ffprobe` is installed, video, audio and image files also show duration, resolution, frame rate, codecs and bit rate:
 
 ```bash
 uts info video.mp4
