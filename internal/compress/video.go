@@ -19,6 +19,10 @@ type VideoOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// Jobs, SkipExisting and Backup are passed through to job.Options.
+	Jobs         int
+	SkipExisting bool
+	Backup       bool
 	// MaxEdge caps the longest edge in pixels; 0 keeps the resolution.
 	MaxEdge int
 }
@@ -44,13 +48,16 @@ func Video(opts VideoOptions) error {
 	)
 
 	return job.Run(opts.Files, job.Options{
-		Verb:    "Compressing",
-		Done:    "Compressed",
-		Noun:    "video file",
-		Compare: true,
-		InPlace: opts.InPlace,
-		DryRun:  opts.DryRun,
-		Code:    derrors.CodeCompressionFailed,
+		Verb:         "Compressing",
+		Done:         "Compressed",
+		Noun:         "video file",
+		Compare:      true,
+		InPlace:      opts.InPlace,
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeCompressionFailed,
 	}, func(file string) (*job.Job, error) {
 		ext := format.Ext(file)
 		if format.Classify(ext) != format.Video {

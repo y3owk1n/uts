@@ -19,6 +19,10 @@ type AudioOptions struct {
 	OutputDir string
 	InPlace   bool
 	DryRun    bool
+	// Jobs, SkipExisting and Backup are passed through to job.Options.
+	Jobs         int
+	SkipExisting bool
+	Backup       bool
 }
 
 // Audio compresses audio files using ffmpeg. Lossy inputs keep their format;
@@ -37,13 +41,16 @@ func Audio(opts AudioOptions) error {
 	ui.Message.Infof("Audio compression at %s quality (bitrate=%s)", opts.Quality, bitrate)
 
 	return job.Run(opts.Files, job.Options{
-		Verb:    "Compressing",
-		Done:    "Compressed",
-		Noun:    "audio file",
-		Compare: true,
-		InPlace: opts.InPlace,
-		DryRun:  opts.DryRun,
-		Code:    derrors.CodeCompressionFailed,
+		Verb:         "Compressing",
+		Done:         "Compressed",
+		Noun:         "audio file",
+		Compare:      true,
+		InPlace:      opts.InPlace,
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeCompressionFailed,
 	}, func(file string) (*job.Job, error) {
 		ext := format.Ext(file)
 		if format.Classify(ext) != format.Audio {

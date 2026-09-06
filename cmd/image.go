@@ -59,12 +59,15 @@ original are reported and, with -i, the original is kept.`,
 		log.Debug("compressing image files", "files", files)
 
 		return compress.Image(compress.ImageOptions{
-			Files:     files,
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
-			MaxEdge:   maxEdge,
+			Files:        files,
+			Quality:      quality,
+			OutputDir:    outputDir,
+			InPlace:      inPlace,
+			DryRun:       dryRun,
+			Jobs:         jobs,
+			SkipExisting: skipExisting,
+			Backup:       backup,
+			MaxEdge:      maxEdge,
 		})
 	},
 }

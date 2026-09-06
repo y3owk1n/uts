@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 
 	"charm.land/log/v2"
 	"github.com/spf13/cobra"
@@ -11,16 +12,19 @@ import (
 )
 
 var (
-	quality   string
-	outputDir string
-	inPlace   bool
-	dryRun    bool
-	verbose   bool
-	quiet     bool
-	recursive bool
-	algorithm string
-	targetFmt string
-	maxEdge   int
+	quality      string
+	outputDir    string
+	inPlace      bool
+	dryRun       bool
+	verbose      bool
+	quiet        bool
+	recursive    bool
+	jobs         int
+	skipExisting bool
+	backup       bool
+	algorithm    string
+	targetFmt    string
+	maxEdge      int
 
 	// Version is the current version of uts, set at build time.
 	Version = "dev"
@@ -68,6 +72,23 @@ func Execute() error {
 		}
 
 		ui.SetQuiet(quiet && !verbose)
+
+		switch {
+		case jobs < 0:
+			return derrors.Newf(
+				derrors.CodeInvalidInput,
+				"--jobs must be 0 (all cores) or a positive number, got %d",
+				jobs,
+			)
+		case jobs == 0:
+			jobs = runtime.NumCPU()
+		}
+
+		if backup && !inPlace {
+			ui.Message.Warnf(
+				"--backup only applies with --in-place; originals are untouched anyway",
+			)
+		}
 
 		if inPlace && outputDir != "" {
 			ui.Message.Warnf("--in-place is ignored when --output is set; originals are kept")
@@ -160,6 +181,12 @@ func init() {
 		"Only print warnings and errors")
 	RootCmd.PersistentFlags().BoolVarP(&recursive, "recursive", "r", false,
 		"Recurse into directories and expand '**' glob patterns")
+	RootCmd.PersistentFlags().IntVarP(&jobs, "jobs", "j", 1,
+		"Process this many files at once (0 = one per CPU core)")
+	RootCmd.PersistentFlags().BoolVar(&skipExisting, "skip-existing", false,
+		"Skip files whose output already exists (resume an interrupted batch)")
+	RootCmd.PersistentFlags().BoolVar(&backup, "backup", false,
+		"With --in-place, keep the original as <name>.bak")
 
 	RootCmd.AddCommand(videoCmd)
 	RootCmd.AddCommand(imageCmd)

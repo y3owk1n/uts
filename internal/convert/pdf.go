@@ -23,6 +23,10 @@ type PDFOptions struct {
 	Quality   string
 	OutputDir string
 	DryRun    bool
+	// Jobs, SkipExisting and Backup are passed through to job.Options.
+	Jobs         int
+	SkipExisting bool
+	Backup       bool
 }
 
 // PDF converts PDFs to images or combines images into a PDF, chosen by the
@@ -69,11 +73,14 @@ func pdfToImages(opts PDFOptions, target string) error {
 	ui.Message.Infof("Converting PDF → .%s pages at %d DPI", target, dpi)
 
 	return job.Run(opts.Files, job.Options{
-		Verb:   "Extracting",
-		Done:   "Extracted",
-		Noun:   "PDF file",
-		DryRun: opts.DryRun,
-		Code:   derrors.CodeConversionFailed,
+		Verb:         "Extracting",
+		Done:         "Extracted",
+		Noun:         "PDF file",
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeConversionFailed,
 	}, func(file string) (*job.Job, error) {
 		if format.Ext(file) != "pdf" {
 			return nil, derrors.Newf(
@@ -150,11 +157,14 @@ func imagesToPDF(opts PDFOptions) error {
 	ui.Message.Infof("Combining %d images into %s", len(images), out)
 
 	return job.Run([]string{first}, job.Options{
-		Verb:   "Combining",
-		Done:   "Combined",
-		Noun:   "PDF",
-		DryRun: opts.DryRun,
-		Code:   derrors.CodeConversionFailed,
+		Verb:         "Combining",
+		Done:         "Combined",
+		Noun:         "PDF",
+		DryRun:       opts.DryRun,
+		Jobs:         opts.Jobs,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeConversionFailed,
 	}, func(string) (*job.Job, error) {
 		args := make([]string, 0, len(images)+1)
 		args = append(args, images...)

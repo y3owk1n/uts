@@ -47,6 +47,16 @@ type Printer struct {
 	afterError bool
 }
 
+// WithWriters returns a copy of the printer that writes elsewhere, keeping
+// palette, icons and quiet mode. Parallel jobs use it to buffer their output.
+func (pr *Printer) WithWriters(out, errOut io.Writer) *Printer {
+	clone := *pr
+	clone.out = out
+	clone.errOut = errOut
+
+	return &clone
+}
+
 // SetQuiet suppresses everything except warnings and errors.
 func (pr *Printer) SetQuiet(quiet bool) {
 	pr.quiet = quiet

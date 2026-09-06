@@ -61,13 +61,16 @@ Target formats: ` + strings.Join(format.ImageTargets, ", "),
 			log.Debug("converting image files", "files", files, "target", targetFmt)
 
 			return convert.Image(convert.ImageOptions{
-				Files:     files,
-				Target:    targetFmt,
-				Quality:   quality,
-				OutputDir: outputDir,
-				InPlace:   inPlace,
-				DryRun:    dryRun,
-				MaxEdge:   maxEdge,
+				Files:        files,
+				Target:       targetFmt,
+				Quality:      quality,
+				OutputDir:    outputDir,
+				InPlace:      inPlace,
+				DryRun:       dryRun,
+				Jobs:         jobs,
+				SkipExisting: skipExisting,
+				Backup:       backup,
+				MaxEdge:      maxEdge,
 			})
 		},
 	}
@@ -114,14 +117,17 @@ Target formats: ` + strings.Join(format.VideoTargets, ", "),
 			log.Debug("converting video files", "files", files, "target", targetFmt)
 
 			return convert.Video(convert.VideoOptions{
-				Files:      files,
-				Target:     targetFmt,
-				Quality:    quality,
-				QualitySet: cmd.Flags().Changed("quality"),
-				OutputDir:  outputDir,
-				InPlace:    inPlace,
-				DryRun:     dryRun,
-				MaxEdge:    maxEdge,
+				Files:        files,
+				Target:       targetFmt,
+				Quality:      quality,
+				QualitySet:   cmd.Flags().Changed("quality"),
+				OutputDir:    outputDir,
+				InPlace:      inPlace,
+				DryRun:       dryRun,
+				Jobs:         jobs,
+				SkipExisting: skipExisting,
+				Backup:       backup,
+				MaxEdge:      maxEdge,
 			})
 		},
 	}
@@ -158,12 +164,15 @@ Target formats: ` + strings.Join(format.AudioTargets, ", "),
 			log.Debug("converting audio files", "files", files, "target", targetFmt)
 
 			return convert.Audio(convert.AudioOptions{
-				Files:     files,
-				Target:    targetFmt,
-				Quality:   quality,
-				OutputDir: outputDir,
-				InPlace:   inPlace,
-				DryRun:    dryRun,
+				Files:        files,
+				Target:       targetFmt,
+				Quality:      quality,
+				OutputDir:    outputDir,
+				InPlace:      inPlace,
+				DryRun:       dryRun,
+				Jobs:         jobs,
+				SkipExisting: skipExisting,
+				Backup:       backup,
 			})
 		},
 	}
@@ -200,11 +209,14 @@ images → PDF: combines the images, in order, into a single PDF`,
 			log.Debug("converting PDF files", "files", files, "target", targetFmt)
 
 			return convert.PDF(convert.PDFOptions{
-				Files:     files,
-				Target:    targetFmt,
-				Quality:   quality,
-				OutputDir: outputDir,
-				DryRun:    dryRun,
+				Files:        files,
+				Target:       targetFmt,
+				Quality:      quality,
+				OutputDir:    outputDir,
+				DryRun:       dryRun,
+				Jobs:         jobs,
+				SkipExisting: skipExisting,
+				Backup:       backup,
 			})
 		},
 	}

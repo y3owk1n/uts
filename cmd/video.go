@@ -55,12 +55,15 @@ Quality: high (crf=23, slow), medium (crf=28, medium), low (crf=32, fast), or ra
 		log.Debug("compressing video files", "files", files)
 
 		return compress.Video(compress.VideoOptions{
-			Files:     files,
-			Quality:   quality,
-			OutputDir: outputDir,
-			InPlace:   inPlace,
-			DryRun:    dryRun,
-			MaxEdge:   maxEdge,
+			Files:        files,
+			Quality:      quality,
+			OutputDir:    outputDir,
+			InPlace:      inPlace,
+			DryRun:       dryRun,
+			Jobs:         jobs,
+			SkipExisting: skipExisting,
+			Backup:       backup,
+			MaxEdge:      maxEdge,
 		})
 	},
 }
