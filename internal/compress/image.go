@@ -2,8 +2,12 @@
 package compress
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"os/exec"
 	"strconv"
+	"strings"
 
 	derrors "github.com/y3owk1n/uts/internal/core/errors"
 	"github.com/y3owk1n/uts/internal/format"
@@ -110,10 +114,24 @@ func planImage(file string, quality, maxEdge int, outputDir string) (*job.Job, e
 
 // pngSteps compresses a PNG. With a size cap ImageMagick writes the resized
 // file first and pngquant then quantizes it in place.
+// pngquant exit codes that mean "nothing to gain here", not failure.
+const (
+	// pngquantTooLowQuality: the result would fall below the --quality
+	// minimum, typically because the PNG is already quantized.
+	pngquantTooLowQuality = 99
+	// pngquantNotSmaller: --skip-if-larger found the output would be bigger.
+	pngquantNotSmaller = 98
+)
+
+// pngSteps compresses a PNG. With a size cap ImageMagick writes the resized
+// file first and pngquant then quantizes it in place.
 func pngSteps(file, out string, quality, maxEdge int) (string, []job.Step, error) {
 	switch {
 	case util.HasTool("pngquant"):
-		quant := fmt.Sprintf("--quality=%d-%d", max(quality-10, 0), quality)
+		common := []string{
+			fmt.Sprintf("--quality=%d-%d", max(quality-10, 0), quality),
+			"--speed", "1", "--strip", "--force", "--skip-if-larger",
+		}
 
 		var (
 			steps []job.Step
@@ -126,38 +144,12 @@ func pngSteps(file, out string, quality, maxEdge int) (string, []job.Step, error
 				return "", nil, err
 			}
 
-			steps = append(
-				steps,
-				resize,
-				job.Exec(
-					"pngquant",
-					quant,
-					"--speed",
-					"1",
-					"--strip",
-					"--force",
-					"--ext",
-					".png",
-					out,
-				),
-			)
+			steps = append(steps, resize,
+				pngquantStep(file, out, append(common, "--ext", ".png", out), true))
 			tool = "ImageMagick + pngquant"
 		} else {
-			steps = append(
-				steps,
-				job.Exec(
-					"pngquant",
-					quant,
-					"--speed",
-					"1",
-					"--strip",
-					"--force",
-					"--output",
-					out,
-					"--",
-					file,
-				),
-			)
+			steps = append(steps,
+				pngquantStep(file, out, append(common, "--output", out, "--", file), false))
 			tool = "pngquant"
 		}
 
@@ -177,6 +169,34 @@ func pngSteps(file, out string, quality, maxEdge int) (string, []job.Step, error
 	}
 
 	return magickSteps(file, out, quality, maxEdge)
+}
+
+// pngquantStep runs pngquant and treats its "cannot improve this file" exit
+// codes as success rather than failure. The pixels are kept as they are:
+// when staged, out already holds the resized image; otherwise the input is
+// copied to out. optipng can still do lossless work on it and the runner's
+// not-smaller guard reports the outcome.
+func pngquantStep(file, out string, args []string, staged bool) job.Step {
+	cmd := exec.CommandContext(context.Background(), "pngquant", args...)
+
+	return job.Do(util.Describe(cmd), func() error {
+		output, err := cmd.CombinedOutput()
+		if err == nil {
+			return nil
+		}
+
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) &&
+			(exitErr.ExitCode() == pngquantTooLowQuality || exitErr.ExitCode() == pngquantNotSmaller) {
+			if staged {
+				return nil
+			}
+
+			return util.CopyFile(file, out)
+		}
+
+		return fmt.Errorf("pngquant: %w\n%s", err, strings.TrimSpace(string(output)))
+	})
 }
 
 func jpegSteps(file, out string, quality, maxEdge int) (string, []job.Step, error) {
