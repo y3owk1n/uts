@@ -1,15 +1,17 @@
-//nolint:goconst,mnd
+//nolint:mnd,goconst
 package convert
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -23,199 +25,146 @@ type PDFOptions struct {
 	DryRun    bool
 }
 
-// PDF converts PDFs to images or images to PDFs.
+// PDF converts PDFs to images or combines images into a PDF, chosen by the
+// extension of the first input.
 func PDF(opts PDFOptions) error {
 	if len(opts.Files) == 0 {
-		ui.Message.Errorf("No files provided")
-
-		return nil
+		return derrors.New(derrors.CodeInvalidInput, "no files provided")
 	}
 
-	firstExt := strings.ToLower(strings.TrimPrefix(filepath.Ext(opts.Files[0]), "."))
-
-	if firstExt == "pdf" {
-		return pdfToImages(opts)
+	target := format.Normalize(opts.Target)
+	if !slices.Contains(format.PDFTargets, target) {
+		return unsupportedTarget(target, format.PDFTargets)
 	}
 
-	switch firstExt {
-	case "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif":
+	first := format.Ext(opts.Files[0])
+
+	switch {
+	case first == "pdf" && target != "pdf":
+		return pdfToImages(opts, target)
+	case format.Classify(first) == format.Image && target == "pdf":
 		return imagesToPDF(opts)
+	case first == "pdf":
+		return derrors.New(
+			derrors.CodeInvalidInput,
+			"input is already a PDF (use --to jpg or --to png)",
+		)
 	default:
-		ui.Message.Errorf("Unsupported input: .%s (provide PDF or images)", firstExt)
-
-		return nil
+		return derrors.Newf(derrors.CodeUnsupportedFormat,
+			"unsupported input .%s (provide a PDF, or images with --to pdf)", first)
 	}
 }
 
-func pdfToImages(opts PDFOptions) error {
-	target := strings.ToLower(opts.Target)
-	switch target {
-	case "jpg", "jpeg", "png":
-	default:
-		ui.Message.Errorf("Unsupported target: .%s (use jpg or png)", target)
-
-		return nil
-	}
-
+func pdfToImages(opts PDFOptions, target string) error {
 	dpi, _, err := util.PDFDPI(opts.Quality)
 	if err != nil {
 		return err
 	}
 
-	ui.Message.Infof("Converting PDF → images at %d DPI", dpi)
-
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
-		}
-
-		origSize := util.FileSize(file)
-		ui.Message.Stepf("[%d/%d] %s (%s)", idx+1, len(opts.Files), file, util.HumanSize(origSize))
-
-		if opts.DryRun {
-			ui.Message.Infof("[dry-run] Would extract %s -> images (dpi=%d)", file, dpi)
-
-			continue
-		}
-
-		outDir := opts.OutputDir
-		if outDir == "" {
-			base := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
-			outDir = filepath.Join(filepath.Dir(file), base)
-		}
-
-		_ = os.MkdirAll(outDir, 0o755)
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Extracting %s...", file))
-		spinner.Start()
-
-		var convertErr error
-		switch {
-		case util.HasTool("pdftoppm"):
-			imgExt := target
-			if target == "jpg" {
-				imgExt = "jpeg"
-			}
-
-			convertErr = exec.CommandContext(context.Background(), "pdftoppm", "-"+imgExt, "-r", strconv.Itoa(dpi), file, filepath.Join(outDir, "page")).
-				Run()
-		case hasMagick():
-			magick := "magick"
-			if !util.HasTool("magick") {
-				magick = "convert"
-			}
-
-			convertErr = exec.CommandContext(context.Background(), magick, "-density", strconv.Itoa(dpi), file, filepath.Join(outDir, "page.%03d."+target)).
-				Run()
-		default:
-			spinner.Stop()
-			ui.Message.Errorf(
-				"PDF conversion tools not found — install: brew install poppler imagemagick",
-			)
-
-			return nil
-		}
-
-		spinner.Stop()
-
-		if convertErr == nil {
-			ui.Message.Successf("%s: pages extracted to %s/", file, outDir)
-		} else {
-			ui.Message.Errorf("Extraction failed: %s", file)
-		}
+	if !util.HasTool("pdftoppm") && util.MagickBin() == "" {
+		return derrors.New(derrors.CodeToolNotFound,
+			"PDF conversion tools not found — install: brew install poppler imagemagick")
 	}
 
-	return nil
+	ui.Message.Infof("Converting PDF → .%s pages at %d DPI", target, dpi)
+
+	return job.Run(opts.Files, job.Options{
+		Verb:   "Extracting",
+		Done:   "Extracted",
+		Noun:   "PDF files",
+		DryRun: opts.DryRun,
+		Code:   derrors.CodeConversionFailed,
+	}, func(file string) (*job.Job, error) {
+		if format.Ext(file) != "pdf" {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"not a PDF: .%s",
+				format.Ext(file),
+			)
+		}
+
+		base := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+
+		outDir := filepath.Join(filepath.Dir(file), base)
+		if opts.OutputDir != "" {
+			outDir = filepath.Join(opts.OutputDir, base)
+		}
+
+		mkdir := job.Do("mkdir -p "+outDir, func() error { return os.MkdirAll(outDir, 0o755) })
+
+		if util.HasTool("pdftoppm") {
+			flag := "-" + target
+			if target == "jpg" {
+				flag = "-jpeg"
+			}
+
+			return &job.Job{
+				Input:  file,
+				Output: outDir,
+				Steps: []job.Step{mkdir, job.Exec("pdftoppm", flag, "-r", strconv.Itoa(dpi),
+					file, filepath.Join(outDir, "page"))},
+				Note: "via pdftoppm",
+			}, nil
+		}
+
+		return &job.Job{
+			Input:  file,
+			Output: outDir,
+			Steps: []job.Step{mkdir, job.Exec(util.MagickBin(), "-density", strconv.Itoa(dpi),
+				file, filepath.Join(outDir, "page-%03d."+target))},
+			Note: "via ImageMagick",
+		}, nil
+	})
 }
 
 func imagesToPDF(opts PDFOptions) error {
-	target := strings.ToLower(opts.Target)
-	if target != "pdf" {
-		ui.Message.Errorf("Cannot combine images into .%s", target)
-
-		return nil
-	}
-
-	ui.Message.Infof("Combining %d images into PDF", len(opts.Files))
-
-	var validFiles []string
-	for _, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
-		}
-
-		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file), "."))
-		switch ext {
-		case "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif":
-			validFiles = append(validFiles, file)
-		default:
-			ui.Message.Warnf("Skipping non-image: %s", file)
-		}
-	}
-
-	if len(validFiles) == 0 {
-		ui.Message.Errorf("No valid image files provided")
-
-		return nil
-	}
-
-	out := opts.OutputDir
-	if out == "" {
-		out = filepath.Dir(validFiles[0])
-	}
-
-	baseName := strings.TrimSuffix(filepath.Base(validFiles[0]), filepath.Ext(validFiles[0]))
-	outPath := filepath.Join(out, baseName+".pdf")
-
-	if opts.DryRun {
-		ui.Message.Infof("[dry-run] Would combine %d images -> %s", len(validFiles), outPath)
-
-		return nil
-	}
-
-	_ = os.MkdirAll(filepath.Dir(outPath), 0o755)
-
-	ui.Message.Stepf("Combining %d images → PDF", len(validFiles))
-
-	spinner := ui.NewSpinner(nil, 0)
-	spinner.SetSuffix("Combining images...")
-	spinner.Start()
-
-	var convertErr error
-	if hasMagick() {
-		magick := "magick"
-		if !util.HasTool("magick") {
-			magick = "convert"
-		}
-
-		args := make([]string, 0, len(validFiles)+1)
-		args = append(args, validFiles...)
-		args = append(args, outPath)
-		convertErr = exec.CommandContext(context.Background(), magick, args...).Run()
-	} else {
-		spinner.Stop()
-		ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
-
-		return nil
-	}
-
-	spinner.Stop()
-
-	if convertErr == nil && util.FileExists(outPath) {
-		ui.Message.Successf(
-			"%d images → %s (%s)",
-			len(validFiles),
-			filepath.Base(outPath),
-			util.HumanSize(util.FileSize(outPath)),
+	bin := util.MagickBin()
+	if bin == "" {
+		return derrors.New(
+			derrors.CodeToolNotFound,
+			"ImageMagick not found — install: brew install imagemagick",
 		)
-	} else {
-		ui.Message.Errorf("PDF creation failed")
 	}
 
-	return nil
+	var images []string
+
+	for _, file := range opts.Files {
+		switch {
+		case !util.FileExists(file):
+			ui.Message.Warnf("File not found: %s", file)
+		case format.Classify(format.Ext(file)) != format.Image:
+			ui.Message.Warnf("Skipping non-image: %s", file)
+		default:
+			images = append(images, file)
+		}
+	}
+
+	if len(images) == 0 {
+		return derrors.New(derrors.CodeInvalidInput, "no valid image files provided")
+	}
+
+	first := images[0]
+
+	out := util.CalcConvertOutputPath(first, "pdf", opts.OutputDir)
+
+	ui.Message.Infof("Combining %d images into %s", len(images), out)
+
+	return job.Run([]string{first}, job.Options{
+		Verb:   "Combining",
+		Done:   "Combined",
+		Noun:   "PDF",
+		DryRun: opts.DryRun,
+		Code:   derrors.CodeConversionFailed,
+	}, func(string) (*job.Job, error) {
+		args := make([]string, 0, len(images)+1)
+		args = append(args, images...)
+		args = append(args, out)
+
+		return &job.Job{
+			Input:  first,
+			Output: out,
+			Steps:  []job.Step{job.Exec(bin, args...)},
+			Note:   fmt.Sprintf("%d images via ImageMagick", len(images)),
+		}, nil
+	})
 }

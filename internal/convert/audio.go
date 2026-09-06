@@ -2,11 +2,12 @@
 package convert
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
-	"strings"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/ffmpeg"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -21,15 +22,12 @@ type AudioOptions struct {
 	DryRun    bool
 }
 
-// Audio converts audio files to the target format.
+// Audio converts audio files, or extracts the audio track of video files, to
+// the target format.
 func Audio(opts AudioOptions) error {
-	target := strings.ToLower(opts.Target)
-
-	codec, extHint := audioCodec(target)
+	codec, outExt := format.AudioCodec(opts.Target)
 	if codec == "" {
-		ui.Message.Errorf("Unsupported target format: .%s", target)
-
-		return nil
+		return unsupportedTarget(opts.Target, format.AudioTargets)
 	}
 
 	bitrate, err := util.AudioBitrate(opts.Quality)
@@ -37,101 +35,52 @@ func Audio(opts AudioOptions) error {
 		return err
 	}
 
-	ui.Message.Infof("Converting audio to .%s (%s, %s)", extHint, codec, bitrate)
+	err = ffmpeg.Check()
+	if err != nil {
+		return err
+	}
 
-	total := len(opts.Files)
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
+	if format.Lossless(outExt) {
+		ui.Message.Infof("Converting audio to .%s (%s, lossless)", outExt, codec)
+	} else {
+		ui.Message.Infof("Converting audio to .%s (%s, %s)", outExt, codec, bitrate)
+	}
 
-			continue
-		}
-
-		if strings.HasSuffix(strings.ToLower(file), "."+extHint) {
-			ui.Message.Warnf("Already .%s, skipping: %s", extHint, file)
-
-			continue
-		}
-
-		out := util.CalcConvertOutputPath(file, extHint, opts.OutputDir)
-		origSize := util.FileSize(file)
-
-		ui.Message.Stepf(
-			"[%d/%d] %s → .%s (%s)",
-			idx+1,
-			total,
-			file,
-			extHint,
-			util.HumanSize(origSize),
-		)
-
-		if opts.DryRun {
-			ui.Message.Infof(
-				"[dry-run] Would convert %s -> %s%s",
-				file,
-				out,
-				util.InPlaceHint(opts.InPlace),
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Converting",
+		Done:    "Converted",
+		Noun:    "audio files",
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeConversionFailed,
+	}, func(file string) (*job.Job, error) {
+		ext := format.Ext(file)
+		if cat := format.Classify(ext); cat != format.Audio && cat != format.Video {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"unsupported audio source .%s",
+				ext,
 			)
-
-			continue
 		}
 
-		_ = util.EnsureDir(out)
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Converting %s...", file))
-		spinner.Start()
-
-		output, err := exec.CommandContext(
-			context.Background(), "ffmpeg",
-			"-i", file,
-			"-vn",
-			"-c:a", codec,
-			"-b:a", bitrate,
-			"-y", out,
-		).CombinedOutput()
-
-		spinner.Stop()
-
-		if err == nil && util.FileExists(out) {
-			ui.Message.Successf(
-				"%s: %s → %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(util.FileSize(out)),
-			)
-
-			if opts.InPlace {
-				util.MaybeReplaceOrRemove(out, file)
-			}
-		} else {
-			ui.Message.Errorf("Conversion failed: %s", file)
-			ui.Message.Mutedf("ffmpeg: %s", string(output))
+		if format.Same(ext, outExt) {
+			return &job.Job{Input: file, Skip: "Already ." + outExt}, nil
 		}
-	}
 
-	if total > 1 {
-		ui.Message.Successf("Converted %d audio files", total)
-	}
+		out := util.CalcConvertOutputPath(file, outExt, opts.OutputDir)
 
-	return nil
-}
+		args := []string{"-i", file, "-vn", "-c:a", codec}
+		if !format.Lossless(outExt) {
+			args = append(args, "-b:a", bitrate)
+		}
 
-func audioCodec(target string) (string, string) {
-	switch target {
-	case "mp3":
-		return "libmp3lame", "mp3"
-	case "aac", "m4a":
-		return "aac", "m4a"
-	case "wav":
-		return "pcm_s16le", "wav"
-	case "flac":
-		return "flac", "flac"
-	case "opus":
-		return "libopus", "opus"
-	case "ogg":
-		return "libvorbis", "ogg"
-	}
+		args = append(args, "-y", out)
 
-	return "", ""
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps:  []job.Step{job.Exec("ffmpeg", args...)},
+			Note:   fmt.Sprintf(".%s → .%s via %s", ext, outExt, codec),
+		}, nil
+	})
 }

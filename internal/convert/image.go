@@ -1,14 +1,15 @@
-//nolint:goconst,mnd
+//nolint:mnd,goconst
 package convert
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
-	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
+	derrors "github.com/y3owk1n/uts/internal/core/errors"
+	"github.com/y3owk1n/uts/internal/format"
+	"github.com/y3owk1n/uts/internal/job"
 	"github.com/y3owk1n/uts/internal/ui"
 	"github.com/y3owk1n/uts/internal/util"
 )
@@ -23,122 +24,117 @@ type ImageOptions struct {
 	DryRun    bool
 }
 
+// sipsTargets are the formats macOS sips can write, used when ImageMagick is
+// missing.
+var sipsTargets = []string{"jpg", "png", "tiff", "gif", "bmp"}
+
 // Image converts image files to the target format.
 func Image(opts ImageOptions) error {
-	target := strings.ToLower(opts.Target)
-	switch target {
-	case "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "avif":
-	default:
-		ui.Message.Errorf("Unsupported target format: .%s", target)
-
-		return nil
+	target := format.Normalize(opts.Target)
+	if !slices.Contains(format.ImageTargets, target) {
+		return unsupportedTarget(target, format.ImageTargets)
 	}
 
-	qualityVal, err := util.PresetVal(opts.Quality, 60, 80, 90)
+	quality, err := util.PresetVal(opts.Quality, 60, 80, 90)
 	if err != nil {
 		return err
 	}
 
-	if target == "jpeg" {
-		target = "jpg"
-	}
+	ui.Message.Infof("Converting images to .%s (quality=%d)", target, quality)
 
-	ui.Message.Infof("Converting images to .%s (quality=%d)", target, qualityVal)
-
-	total := len(opts.Files)
-	for idx, file := range opts.Files {
-		if !util.FileExists(file) {
-			ui.Message.Warnf("File not found: %s", file)
-
-			continue
+	return job.Run(opts.Files, job.Options{
+		Verb:    "Converting",
+		Done:    "Converted",
+		Noun:    "image files",
+		InPlace: opts.InPlace,
+		DryRun:  opts.DryRun,
+		Code:    derrors.CodeConversionFailed,
+	}, func(file string) (*job.Job, error) {
+		ext := format.Ext(file)
+		if format.Classify(ext) != format.Image {
+			return nil, derrors.Newf(
+				derrors.CodeUnsupportedFormat,
+				"unsupported image format .%s",
+				ext,
+			)
 		}
 
-		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file), "."))
-		if ext == target || (ext == "jpeg" && target == "jpg") {
-			ui.Message.Warnf("Already .%s, skipping: %s", target, file)
-
-			continue
+		if format.Same(ext, target) {
+			return &job.Job{Input: file, Skip: "Already ." + target}, nil
 		}
 
 		out := util.CalcConvertOutputPath(file, target, opts.OutputDir)
-		origSize := util.FileSize(file)
 
-		ui.Message.Stepf(
-			"[%d/%d] .%s → .%s (%s)",
-			idx+1,
-			total,
-			ext,
-			target,
-			util.HumanSize(origSize),
-		)
-
-		if opts.DryRun {
-			ui.Message.Infof(
-				"[dry-run] Would convert %s -> %s%s",
-				file,
-				out,
-				util.InPlaceHint(opts.InPlace),
-			)
-
-			continue
+		tool, step, err := imageStep(file, out, ext, target, quality)
+		if err != nil {
+			return nil, err
 		}
 
-		_ = util.EnsureDir(out)
-
-		spinner := ui.NewSpinner(nil, 0)
-		spinner.SetSuffix(fmt.Sprintf("Converting %s...", file))
-		spinner.Start()
-
-		var convertErr error
-		switch {
-		case hasMagick():
-			if util.HasTool("magick") {
-				convertErr = exec.CommandContext(context.Background(), "magick", file, "-quality", strconv.Itoa(qualityVal), "-strip", out).
-					Run()
-			} else {
-				convertErr = exec.CommandContext(context.Background(), "convert", file, "-quality", strconv.Itoa(qualityVal), "-strip", out).
-					Run()
-			}
-		case util.HasTool("sips"):
-			sipsFmt := target
-			if target == "jpg" {
-				sipsFmt = "jpeg"
-			}
-
-			convertErr = exec.CommandContext(context.Background(), "sips", "-s", "format", sipsFmt, file, "--out", out).
-				Run()
-		default:
-			spinner.Stop()
-			ui.Message.Errorf("ImageMagick not found — install: brew install imagemagick")
-
-			return nil
-		}
-
-		spinner.Stop()
-
-		if convertErr == nil && util.FileExists(out) {
-			ui.Message.Successf(
-				"%s: %s → %s",
-				file,
-				util.HumanSize(origSize),
-				util.HumanSize(util.FileSize(out)),
-			)
-
-			if opts.InPlace {
-				util.MaybeReplaceOrRemove(out, file)
-			}
-		} else {
-			ui.Message.Errorf("Conversion failed: %s", file)
-		}
-	}
-
-	if total > 1 {
-		ui.Message.Successf("Converted %d image files", total)
-	}
-
-	return nil
+		return &job.Job{
+			Input:  file,
+			Output: out,
+			Steps:  []job.Step{step},
+			Note:   fmt.Sprintf(".%s → .%s via %s", ext, target, tool),
+		}, nil
+	})
 }
 
-func hasMagick() bool {
-	return util.HasTool("magick") || util.HasTool("convert")
+func imageStep(file, out, ext, target string, quality int) (string, job.Step, error) {
+	if target == "avif" && (ext == "png" || ext == "jpg" || ext == "jpeg") {
+		switch {
+		case util.HasTool("cavif"):
+			return "cavif", job.Exec(
+				"cavif",
+				"-q",
+				strconv.Itoa(quality),
+				"-s",
+				"6",
+				"-o",
+				out,
+				file,
+			), nil
+		case util.HasTool("avifenc"):
+			quantizer := (100 - quality) * 63 / 100
+
+			return "avifenc", job.Exec(
+				"avifenc",
+				"--min",
+				"0",
+				"--max",
+				strconv.Itoa(quantizer),
+				"-s",
+				"6",
+				file,
+				out,
+			), nil
+		}
+	}
+
+	if bin := util.MagickBin(); bin != "" {
+		return "ImageMagick", job.Exec(
+			bin,
+			file,
+			"-quality",
+			strconv.Itoa(quality),
+			"-strip",
+			out,
+		), nil
+	}
+
+	if util.HasTool("sips") && slices.Contains(sipsTargets, target) {
+		sipsFmt := target
+		if target == "jpg" {
+			sipsFmt = "jpeg"
+		}
+
+		return "sips", job.Exec("sips", "-s", "format", sipsFmt, file, "--out", out), nil
+	}
+
+	return "", job.Step{}, derrors.New(derrors.CodeToolNotFound,
+		"ImageMagick not found — install: brew install imagemagick")
+}
+
+func unsupportedTarget(target string, valid []string) error {
+	return derrors.Newf(derrors.CodeUnsupportedFormat,
+		"unsupported target format .%s (use one of: %s)", target, strings.Join(valid, ", "))
 }
