@@ -8,6 +8,7 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/term"
 )
 
@@ -19,6 +20,7 @@ type Spinner struct {
 	model      spinner.Model
 	speed      time.Duration
 	isTerminal bool
+	fd         uintptr
 
 	mu      sync.Mutex
 	prefix  string
@@ -50,7 +52,8 @@ func NewSpinner(writer io.Writer, speed time.Duration) *Spinner {
 	}
 
 	if file, ok := writer.(*os.File); ok {
-		_spinner.isTerminal = term.IsTerminal(file.Fd())
+		_spinner.fd = file.Fd()
+		_spinner.isTerminal = term.IsTerminal(_spinner.fd)
 	}
 
 	return _spinner
@@ -142,6 +145,15 @@ func (s *Spinner) writeFrame() {
 	updated, _ := s.model.Update(spinner.TickMsg{Time: time.Now(), ID: s.model.ID()})
 	s.model = updated
 
+	line := prefix + frame + " " + suffix
+
+	// A line wider than the terminal wraps, and then "\r" cannot overwrite
+	// it, so every tick would print a new line. Cut it to fit.
+	width, _, err := term.GetSize(s.fd)
+	if err == nil && width > 0 {
+		line = ansi.Truncate(line, width-1, "…")
+	}
+
 	//nolint:errcheck
-	lipgloss.Fprintf(s.writer, "\r\033[K%s%s %s", prefix, frame, suffix)
+	lipgloss.Fprint(s.writer, "\r\033[K"+line)
 }

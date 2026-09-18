@@ -17,6 +17,8 @@ const (
 	AudioKbpsMax    = 512
 	PDFDPIMin       = 36
 	PDFDPIMax       = 1200
+	GifFPSMin       = 1
+	GifFPSMax       = 50
 )
 
 // PresetVal converts a quality preset name to its numeric value.
@@ -85,6 +87,31 @@ func VideoQuality(level string) (int, string, error) {
 		return 0, "", derrors.Newf(
 			derrors.CodeInvalidInput,
 			"invalid quality: %s (use low, medium, high, or CRF 0-51)",
+			level,
+		)
+	}
+}
+
+// GifQuality converts a quality level to a GIF frame rate and ffmpeg dither
+// mode. A number means frames per second.
+func GifQuality(level string) (int, string, error) {
+	if isNumeric(level) {
+		fps := parseInt(level)
+
+		return fps, "sierra2_4a", checkRange(fps, GifFPSMin, GifFPSMax, "GIF fps")
+	}
+
+	switch level {
+	case "low":
+		return 10, "bayer", nil
+	case "medium":
+		return 15, "sierra2_4a", nil
+	case "high":
+		return 20, "sierra2_4a", nil
+	default:
+		return 0, "", derrors.Newf(
+			derrors.CodeInvalidInput,
+			"invalid quality: %s (use low, medium, high, or fps 1-50)",
 			level,
 		)
 	}

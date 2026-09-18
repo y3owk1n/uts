@@ -58,6 +58,12 @@ uts video compress recording.mov --max 1920
 # Convert MOV video to MP4 (stream copy when the codecs fit: instant and lossless)
 uts video convert clip.mov --to mp4
 
+# Convert a screen recording to an animated GIF, 640px wide
+uts video convert demo.mp4 --to gif --max 640
+
+# Combine frames into one animated GIF
+uts image convert frame-*.png --to gif --animate
+
 # Convert multiple pages to high-res PNGs
 uts pdf convert slides.pdf --to png -q high
 
@@ -127,7 +133,7 @@ For complete installation instructions and dependency details, see the [Installa
 | Category      | Actions                       | Supported formats (partial)                |
 | :------------ | :---------------------------- | :----------------------------------------- |
 | **`image`**   | `compress`, `convert`         | png, jpg, webp, gif, heic, avif, tiff, bmp |
-| **`video`**   | `compress`, `convert`         | mp4, mov, mkv, avi, webm, m4v, flv, wmv    |
+| **`video`**   | `compress`, `convert`         | mp4, mov, mkv, avi, webm, m4v, flv, wmv, gif |
 | **`audio`**   | `compress`, `convert`         | mp3, flac, aac, wav, m4a, opus, ogg, wma   |
 | **`pdf`**     | `compress`, `convert`         | pdf, jpg, png                              |
 | **`archive`** | `compress`, `extract`, `list` | zip, tar, tar.gz, tar.zst, tar.xz, tar.bz2, tar.br |

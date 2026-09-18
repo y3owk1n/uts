@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -71,8 +72,20 @@ type Job struct {
 	Steps  []Step
 	// Note is shown under the step line, e.g. the tool chosen for this file.
 	Note string
+	// Label, when set, replaces the input path in the step, spinner and
+	// result lines. Jobs that combine many inputs into one output use it.
+	Label string
 	// Skip, when set, is the reason the file is left alone.
 	Skip string
+}
+
+// name is what the job is called in output: its label, else its input.
+func (j *Job) name() string {
+	if j.Label != "" {
+		return j.Label
+	}
+
+	return j.Input
 }
 
 // Options configures a Run.
@@ -258,7 +271,12 @@ func (r *runner) process(
 	}
 
 	origSize := util.FileSize(file)
-	printer.Stepf("[%d/%d] %s (%s)", idx+1, r.total, file, util.HumanSize(origSize))
+
+	if job.Label != "" {
+		printer.Stepf("%s", job.Label)
+	} else {
+		printer.Stepf("[%d/%d] %s (%s)", idx+1, r.total, file, util.HumanSize(origSize))
+	}
 
 	if job.Note != "" {
 		printer.Mutedf("  %s", job.Note)
@@ -272,7 +290,7 @@ func (r *runner) process(
 
 	err = execute(job, opts, spinner)
 	if err != nil {
-		printer.Errorf("%s failed: %s", strings.TrimSuffix(opts.Verb, "ing")+"ion", file)
+		printer.Errorf("%s failed: %s", strings.TrimSuffix(opts.Verb, "ing")+"ion", job.name())
 		printer.Mutedf("%s", err)
 
 		return result{outcome: outcomeFailed}
@@ -299,9 +317,9 @@ func (r *runner) process(
 
 		saved = origSize - newSize
 	case isDir(job.Output):
-		printer.Successf("%s → %s/", file, job.Output)
+		printer.Successf("%s → %s/", job.name(), job.Output)
 	default:
-		printer.Successf("%s → %s (%s)", file, job.Output, util.HumanSize(newSize))
+		printer.Successf("%s → %s (%s)", job.name(), job.Output, util.HumanSize(newSize))
 	}
 
 	if opts.InPlace {
@@ -339,7 +357,7 @@ func execute(job *Job, opts Options, spinner *ui.Spinner) error {
 	existed := util.FileExists(job.Output)
 
 	if spinner != nil {
-		spinner.SetSuffix(fmt.Sprintf("%s %s...", opts.Verb, job.Input))
+		spinner.SetSuffix(fmt.Sprintf("%s %s...", opts.Verb, job.name()))
 		spinner.Start()
 
 		defer spinner.Stop()
@@ -351,11 +369,16 @@ func execute(job *Job, opts Options, spinner *ui.Spinner) error {
 			return
 		}
 
-		spinner.SetSuffix(fmt.Sprintf("%s %s... %s", opts.Verb, job.Input,
+		spinner.SetSuffix(fmt.Sprintf("%s %s... %s", opts.Verb, job.name(),
 			progressText(done, total, time.Since(started))))
 	}
 
-	for _, step := range job.Steps {
+	for idx, step := range job.Steps {
+		if spinner != nil && len(job.Steps) > 1 {
+			spinner.SetSuffix(fmt.Sprintf("%s %s... %s (step %d/%d)",
+				opts.Verb, job.name(), stepName(step), idx+1, len(job.Steps)))
+		}
+
 		err := runStep(step, report)
 		if err != nil {
 			if !existed {
@@ -371,6 +394,15 @@ func execute(job *Job, opts Options, spinner *ui.Spinner) error {
 	}
 
 	return nil
+}
+
+// stepName is the short label shown while a step of a multi-step job runs.
+func stepName(step Step) string {
+	if step.Cmd != nil {
+		return filepath.Base(step.Cmd.Args[0])
+	}
+
+	return step.Desc
 }
 
 func runStep(step Step, report func(done, total float64)) error {
@@ -515,7 +547,8 @@ func replaceInPlace(job *Job, backup bool) {
 	}
 }
 
-func plural(count int, noun string) string {
+// Plural formats a count with its noun: "1 image", "3 images".
+func Plural(count int, noun string) string {
 	if count == 1 {
 		return "1 " + noun
 	}
@@ -525,12 +558,12 @@ func plural(count int, noun string) string {
 
 func summarize(opts Options, done, failed, skipped int, saved int64) {
 	if opts.DryRun {
-		ui.Message.Infof("[dry-run] %s previewed, nothing written", plural(done, opts.Noun))
+		ui.Message.Infof("[dry-run] %s previewed, nothing written", Plural(done, opts.Noun))
 
 		return
 	}
 
-	msg := opts.Done + " " + plural(done, opts.Noun)
+	msg := opts.Done + " " + Plural(done, opts.Noun)
 
 	var extra []string
 	if skipped > 0 {

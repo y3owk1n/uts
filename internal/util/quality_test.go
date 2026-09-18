@@ -186,3 +186,33 @@ func TestQualityRanges(t *testing.T) {
 		t.Errorf("VideoQuality(0) = %d, %v; want 0, nil", crf, err)
 	}
 }
+
+func TestGifQuality(t *testing.T) {
+	tests := []struct {
+		level      string
+		wantFPS    int
+		wantDither string
+		err        bool
+	}{
+		{"low", 10, "bayer", false},
+		{"medium", 15, "sierra2_4a", false},
+		{"high", 20, "sierra2_4a", false},
+		{"12", 12, "sierra2_4a", false},
+		{"0", 0, "", true},
+		{"51", 0, "", true},
+		{"invalid", 0, "", true},
+	}
+	for _, testCase := range tests {
+		fps, dither, err := GifQuality(testCase.level)
+		if (err != nil) != testCase.err {
+			t.Errorf("GifQuality(%q) err = %v, want err %v", testCase.level, err, testCase.err)
+
+			continue
+		}
+
+		if err == nil && (fps != testCase.wantFPS || dither != testCase.wantDither) {
+			t.Errorf("GifQuality(%q) = %d, %q, want %d, %q",
+				testCase.level, fps, dither, testCase.wantFPS, testCase.wantDither)
+		}
+	}
+}

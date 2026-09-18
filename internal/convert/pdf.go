@@ -2,7 +2,6 @@
 package convert
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -154,7 +153,7 @@ func imagesToPDF(opts PDFOptions) error {
 
 	out := util.CalcConvertOutputPath(first, "pdf", opts.OutputDir)
 
-	ui.Message.Infof("Combining %d images into %s", len(images), out)
+	ui.Message.Infof("Combining images into .pdf")
 
 	return job.Run([]string{first}, job.Options{
 		Verb:         "Combining",
@@ -173,8 +172,9 @@ func imagesToPDF(opts PDFOptions) error {
 		return &job.Job{
 			Input:  first,
 			Output: out,
+			Label:  job.Plural(len(images), "image"),
 			Steps:  []job.Step{job.Exec(bin, args...)},
-			Note:   fmt.Sprintf("%d images via ImageMagick", len(images)),
+			Note:   "pages in argument order, via ImageMagick",
 		}, nil
 	})
 }

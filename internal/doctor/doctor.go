@@ -32,7 +32,7 @@ var baseTools = []tool{
 	{Name: "optipng", Required: false, UsedBy: "image compress (PNG)"},
 	{Name: "jpegoptim", Required: false, UsedBy: "image compress (JPEG)"},
 	{Name: "cwebp", Required: false, UsedBy: "image compress/convert (WebP)"},
-	{Name: "gifsicle", Required: false, UsedBy: "image compress (GIF)"},
+	{Name: "gifsicle", Required: false, UsedBy: "image compress, video convert (GIF)"},
 	{Name: "heif-convert", Required: false, UsedBy: "image compress (HEIC)"},
 	{Name: "cavif", Required: false, UsedBy: "image compress (AVIF)"},
 	{Name: "avifenc", Required: false, UsedBy: "image compress (AVIF)"},

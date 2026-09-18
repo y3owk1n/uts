@@ -150,3 +150,37 @@ func TestCanRemux(t *testing.T) {
 		t.Error("no streams means nothing to remux")
 	}
 }
+
+func TestGifArgs(t *testing.T) {
+	args := ffmpeg.GifArgs("in.mp4", "out.gif", 15, "bayer", 0)
+
+	if !has(args, "-an") || !has(args, "-loop", "0") {
+		t.Fatalf("gif args must drop audio and loop forever: %v", args)
+	}
+
+	graph := args[slices.Index(args, "-filter_complex")+1]
+	for _, want := range []string{"fps=15", "palettegen", "paletteuse=dither=bayer"} {
+		if !strings.Contains(graph, want) {
+			t.Errorf("filter graph missing %q: %s", want, graph)
+		}
+	}
+
+	if strings.Contains(graph, "scale=") {
+		t.Errorf("no scale filter expected without --max: %s", graph)
+	}
+
+	scaled := ffmpeg.GifArgs("in.mp4", "out.gif", 15, "bayer", 480)
+	if !strings.Contains(scaled[slices.Index(scaled, "-filter_complex")+1], "scale=") {
+		t.Errorf("--max must add a scale filter: %v", scaled)
+	}
+}
+
+func TestEncodeArgsGifInputEvenDimensions(t *testing.T) {
+	if !has(ffmpeg.EncodeArgs("in.gif", "out.mp4", "mp4", 28, "medium", 0), "-vf") {
+		t.Error("gif input must get an even-dimension scale filter")
+	}
+
+	if has(ffmpeg.EncodeArgs("in.mov", "out.mp4", "mp4", 28, "medium", 0), "-vf") {
+		t.Error("non-gif input must not get a scale filter")
+	}
+}

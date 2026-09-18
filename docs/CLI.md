@@ -83,6 +83,8 @@ The `-q, --quality` flag converts high-level presets (`low`, `medium`, `high`) t
 
 A number outside the range for its category is rejected before any tool runs, with a message naming the valid range.
 
+Animated GIF output (`video convert --to gif` and `image convert --to gif --animate`) reads `-q` as a frame rate instead: `low` is 10 fps, `medium` 15 fps, `high` 20 fps, and a number is raw fps (`1` to `50`).
+
 ---
 
 ## Detailed Examples
@@ -125,6 +127,12 @@ uts video convert recording.mkv --to webm -q medium
 
 # Convert in-place and replace original files
 uts video convert clip1.mov clip2.mov --to mp4 -i
+
+# Render an animated GIF (palette per file, gifsicle pass when installed)
+uts video convert demo.mp4 --to gif --max 640 -q 12
+
+# Convert an animated GIF to a video
+uts video convert meme.gif --to mp4
 ```
 
 ### Image Commands
@@ -164,6 +172,9 @@ uts image convert screenshot.png --to webp -q high
 
 # Batch convert files matching a glob pattern
 uts image convert '*.heic' --to jpg
+
+# Combine frames, in order, into one animated GIF at 5 fps
+uts image convert frame-*.png --to gif --animate -q 5
 ```
 
 ### PDF Commands

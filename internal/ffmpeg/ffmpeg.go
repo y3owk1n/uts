@@ -112,8 +112,12 @@ func EncodeArgs(input, out, container string, crf int, preset string, maxEdge in
 		}
 	}
 
-	if maxEdge > 0 {
+	switch {
+	case maxEdge > 0:
 		args = append(args, "-vf", ScaleFilter(maxEdge))
+	case format.Ext(input) == "gif":
+		// GIFs often have odd dimensions, which yuv420p encoders reject.
+		args = append(args, "-vf", evenFilter)
 	}
 
 	args = append(args, "-c:a", acodec, "-b:a", "128k")
@@ -123,6 +127,32 @@ func EncodeArgs(input, out, container string, crf int, preset string, maxEdge in
 	}
 
 	return append(args, "-y", out)
+}
+
+const evenFilter = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+
+// GifArgs returns ffmpeg arguments that turn a video into an animated GIF.
+// One filter graph runs palettegen and then paletteuse, so the GIF gets a
+// 256-color palette built from this video instead of ffmpeg's fixed default
+// palette. The graph drops audio, caps the frame rate at fps and passes
+// dither to paletteuse.
+func GifArgs(input, out string, fps int, dither string, maxEdge int) []string {
+	filters := "[0:v]fps=" + strconv.Itoa(fps)
+	if maxEdge > 0 {
+		filters += "," + ScaleFilter(maxEdge) + ":flags=lanczos"
+	}
+
+	graph := filters + ",split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=" +
+		dither + "[out]"
+
+	return []string{
+		"-i", input,
+		"-filter_complex", graph,
+		"-map", "[out]",
+		"-an",
+		"-loop", "0",
+		"-y", out,
+	}
 }
 
 // ScaleFilter returns an ffmpeg scale filter that caps the longest edge at
