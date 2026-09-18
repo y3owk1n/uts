@@ -53,6 +53,10 @@ func Image(opts ImageOptions) error {
 		maxNote(opts.MaxEdge),
 	)
 
+	if target == "gif" && len(opts.Files) > 1 {
+		ui.Message.Infof("Each image becomes its own GIF (pass --animate to combine them into one)")
+	}
+
 	return job.Run(opts.Files, job.Options{
 		Verb:         "Converting",
 		Done:         "Converted",
@@ -168,4 +172,73 @@ func maxNote(maxEdge int) string {
 func unsupportedTarget(target string, valid []string) error {
 	return derrors.Newf(derrors.CodeUnsupportedFormat,
 		"unsupported target format .%s (use one of: %s)", target, strings.Join(valid, ", "))
+}
+
+// AnimateImages combines every input image, in order, into one animated GIF
+// via ImageMagick. The output is named after the first image.
+func AnimateImages(opts ImageOptions) error {
+	if format.Normalize(opts.Target) != "gif" {
+		return derrors.New(derrors.CodeInvalidInput, "--animate requires --to gif")
+	}
+
+	bin := util.MagickBin()
+	if bin == "" {
+		return derrors.New(derrors.CodeToolNotFound,
+			"ImageMagick not found — install: brew install imagemagick")
+	}
+
+	fps, _, err := util.GifQuality(opts.Quality)
+	if err != nil {
+		return err
+	}
+
+	var images []string
+
+	for _, file := range opts.Files {
+		switch {
+		case !util.FileExists(file):
+			ui.Message.Warnf("File not found: %s", file)
+		case format.Classify(format.Ext(file)) != format.Image:
+			ui.Message.Warnf("Skipping non-image: %s", file)
+		default:
+			images = append(images, file)
+		}
+	}
+
+	if len(images) == 0 {
+		return derrors.New(derrors.CodeInvalidInput, "no valid image files provided")
+	}
+
+	first := images[0]
+	out := util.CalcConvertOutputPath(first, "gif", opts.OutputDir)
+
+	ui.Message.Infof("Animating into .gif at %d fps%s", fps, maxNote(opts.MaxEdge))
+
+	return job.Run([]string{first}, job.Options{
+		Verb:         "Animating",
+		Done:         "Animated",
+		Noun:         "GIF",
+		DryRun:       opts.DryRun,
+		SkipExisting: opts.SkipExisting,
+		Backup:       opts.Backup,
+		Code:         derrors.CodeConversionFailed,
+	}, func(string) (*job.Job, error) {
+		// ImageMagick delay is in 1/100 s ticks.
+		args := []string{"-delay", strconv.Itoa(100 / fps), "-loop", "0"}
+		args = append(args, images...)
+
+		if opts.MaxEdge > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx%d>", opts.MaxEdge, opts.MaxEdge))
+		}
+
+		args = append(args, "-layers", "optimize", out)
+
+		return &job.Job{
+			Input:  first,
+			Output: out,
+			Label:  job.Plural(len(images), "image"),
+			Steps:  []job.Step{job.Exec(bin, args...)},
+			Note:   "frames in argument order, via ImageMagick",
+		}, nil
+	})
 }

@@ -61,9 +61,13 @@ var (
 	// ImageTargets, VideoTargets, AudioTargets and PDFTargets are the
 	// conversion targets accepted by each convert command.
 	ImageTargets = []string{"jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "avif"}
-	VideoTargets = []string{"mp4", "mkv", "webm", "mov", "avi", "flv"}
+	VideoTargets = []string{"mp4", "mkv", "webm", "mov", "avi", "flv", "gif"}
 	AudioTargets = []string{"mp3", "aac", "m4a", "wav", "flac", "opus", "ogg"}
 	PDFTargets   = []string{"jpg", "jpeg", "png", "pdf"}
+
+	// VideoConvertExts are the inputs video convert accepts: every video
+	// container plus animated GIF, which ffmpeg decodes as a video stream.
+	VideoConvertExts = slices.Concat(VideoExts, []string{"gif"})
 )
 
 // Ext returns the lowercase extension of path without the leading dot.
