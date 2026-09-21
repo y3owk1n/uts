@@ -36,7 +36,7 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 
 ## Development Setup
 
-See our [Development Guide](docs/DEVELOPMENT.md) for full instructions on setting up your dev environment using either Nix/Devbox or manual configurations.
+See our [Development Guide](docs/DEVELOPMENT.md) for full instructions on setting up your dev environment using either oku or manual configurations.
 
 ---
 
