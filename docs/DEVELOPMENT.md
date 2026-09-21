@@ -8,7 +8,7 @@ This guide covers building, testing, linting, and contributing to the `uts` code
 
 - [Quick Start](#quick-start)
 - [Prerequisites & Development Setup](#prerequisites--development-setup)
-    - [Option A: Devbox (Recommended)](#option-a-devbox-recommended)
+    - [Option A: oku (Recommended)](#option-a-oku-recommended)
     - [Option B: Manual Setup](#option-b-manual-setup)
 - [Project Architecture](#project-architecture)
 - [Justfile Tasks (Build/Test/Lint)](#justfile-tasks-buildtestlint)
@@ -30,8 +30,8 @@ Get `uts` building and running locally in under 5 minutes:
 git clone https://github.com/y3owk1n/uts.git
 cd uts
 
-# 2. Enter development shell
-devbox shell  # Or use direnv automatically
+# 2. Install the toolchain
+oku sync && oku allow
 
 # 3. Build the binary
 just build
@@ -47,27 +47,28 @@ just test
 
 ## Prerequisites & Development Setup
 
-### Option A: Devbox (Recommended)
+### Option A: oku (Recommended)
 
-`uts` uses [Devbox](https://www.jetify.com/devbox) to provide a predictable, isolated development shell with all required toolchains pre-configured.
+[oku](https://github.com/y3owk1n/oku) installs the toolchain that `oku.toml` lists, at the versions `oku.lock` pins, into a profile that belongs to this repo.
 
-1. Install Devbox:
+1. Install oku:
     ```bash
-    curl -fsSL https://get.jetify.com/devbox | bash
+    curl -fsSL https://raw.githubusercontent.com/y3owk1n/oku/main/install.sh | sh
     ```
-2. Enter the development shell:
+2. Install the toolchain and let the shell hook put it on `PATH` inside this repo:
     ```bash
-    devbox shell
+    oku sync
+    oku allow
     ```
 
-_Tip:_ If you use `direnv`, the devbox environment will automatically load whenever you `cd` into the project directory via the provided `.envrc` config.
+The shell hook that oku's installer prints does the rest whenever you `cd` in. With [direnv](https://direnv.net/), `eval "$(oku env --shell bash)"` in an `.envrc` does the same.
 
-The Devbox environment automatically installs:
+oku installs:
 
 - **Go 1.26.4**
 - **just** (command runner)
 - **golangci-lint**
-- formatting tools (`gofumpt`, `golines`)
+- formatting tools (`gofumpt`, `golines`, `goimports`)
 - Go language server tools (`gopls`)
 
 ### Option B: Manual Setup
