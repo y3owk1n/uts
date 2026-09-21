@@ -20,22 +20,18 @@ if useZip then
       {
         "aarch64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-arm64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.3.0/uts-darwin-arm64.zip)`
           sha256 = "sha256-cAVrb/JAWloUQgehnDKPpPhdtmT2a+axRwLpxy9y2w8=";
         };
         "x86_64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-amd64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.3.0/uts-darwin-amd64.zip)`
           sha256 = "sha256-Xt7KznKXR5J89z6vvRa1adfqZZGLWJZTuP4zC4V4MJ4=";
         };
         "aarch64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-arm64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.3.0/uts-linux-arm64.zip)`
           sha256 = "sha256-BlCk7LWyHSoJnOfprOVuGkDDWUERtM5OjAGUVEM9QJ8=";
         };
         "x86_64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-amd64.zip";
-          # run `nix hash convert --hash-algo sha256 (nix-prefetch-url https://github.com/y3owk1n/uts/releases/download/v0.3.0/uts-linux-amd64.zip)`
           sha256 = "sha256-O/+E2ur0pnLX2okUlKSXbIepqLopnFfCeVp4m6RZuJ0=";
         };
       }
@@ -116,10 +112,8 @@ else
 
     src = lib.cleanSource ../.;
 
-    # run the following command to get the sha256 hash
-    # `nix-shell -p go --run 'go mod vendor'`
-    # `nix hash path vendor`
-    # `rm -rf vendor`
+    # scripts/update-nix-hashes.sh writes this, and the four zip hashes above.
+    # The nix-hashes workflow runs it after every push to main.
     vendorHash = "sha256-7TFH0Lvt6JOqoDlGZZaDeMWE8KaAsIRNimSDQUU8RCM=";
 
     ldflags = [
