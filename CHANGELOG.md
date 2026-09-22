@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/y3owk1n/uts/compare/v0.3.0...v0.4.0) (2026-09-22)
+
+
+### Features
+
+* **convert:** add animated GIF conversion for videos and images ([#53](https://github.com/y3owk1n/uts/issues/53)) ([642ffbd](https://github.com/y3owk1n/uts/commit/642ffbdcf9ef3f0dec16f769b491c1ddee685aad))
+
 ## [0.3.0](https://github.com/y3owk1n/uts/compare/v0.2.3...v0.3.0) (2026-09-06)
 
 
