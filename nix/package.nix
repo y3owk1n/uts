@@ -20,19 +20,19 @@ if useZip then
       {
         "aarch64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-arm64.zip";
-          sha256 = "sha256-cAVrb/JAWloUQgehnDKPpPhdtmT2a+axRwLpxy9y2w8=";
+          sha256 = "sha256-1BKRHdDhjezN1pyQiFBvZgvGMXgmyssIRMYM/6P4+QM=";
         };
         "x86_64-darwin" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-darwin-amd64.zip";
-          sha256 = "sha256-Xt7KznKXR5J89z6vvRa1adfqZZGLWJZTuP4zC4V4MJ4=";
+          sha256 = "sha256-eOZrP8Zn57WZdYcWR3cnqKvuIeou/mKkz0LFLkghAuw=";
         };
         "aarch64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-arm64.zip";
-          sha256 = "sha256-BlCk7LWyHSoJnOfprOVuGkDDWUERtM5OjAGUVEM9QJ8=";
+          sha256 = "sha256-Fkm1qnS8Wa1UyIHQsDbNjurzTMhyc6qylyF6W7da3Fk=";
         };
         "x86_64-linux" = {
           url = "https://github.com/y3owk1n/uts/releases/download/v${version}/uts-linux-amd64.zip";
-          sha256 = "sha256-O/+E2ur0pnLX2okUlKSXbIepqLopnFfCeVp4m6RZuJ0=";
+          sha256 = "sha256-/YxckmQJ32OUD3/fPbiUoEoESVMnUrOFd0w51d762CY=";
         };
       }
       .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
