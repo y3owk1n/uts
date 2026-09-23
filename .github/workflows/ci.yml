@@ -27,12 +27,9 @@ jobs:
                   ref: ${{ github.head_ref }}
 
             # oku installs go, golangci-lint and just at the versions oku.lock
-            # pins. Keep `version` equal to the tag in `uses`, since dependabot
-            # bumps only the tag.
+            # pins. The action installs the oku release of its own tag.
             - name: Setup the toolchain
-              uses: y3owk1n/oku@v0.6.0
-              with:
-                  version: v0.6.0
+              uses: y3owk1n/oku@v0.6.1
               env:
                   GITHUB_TOKEN: ${{ github.token }}
 
