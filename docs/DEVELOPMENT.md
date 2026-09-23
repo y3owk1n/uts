@@ -65,11 +65,13 @@ The shell hook that oku's installer prints does the rest whenever you `cd` in. W
 
 oku installs:
 
-- **Go 1.26.4**
+- **Go 1.26**, at the patch release that `oku.lock` pins
 - **just** (command runner)
-- **golangci-lint**
+- **golangci-lint** 2, which CI runs at the same version
 - formatting tools (`gofumpt`, `golines`, `goimports`)
 - Go language server tools (`gopls`)
+
+`oku update` moves each tool to the newest version that `oku.toml` allows, and `oku outdated` shows what is behind. CI installs the same tools from `oku.lock` with the [oku action](https://github.com/y3owk1n/oku/blob/main/action.yml), pinned to one oku release in `.github/workflows/ci.yml`.
 
 ### Option B: Manual Setup
 
