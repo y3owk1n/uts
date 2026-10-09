@@ -122,7 +122,7 @@ brew install ffmpeg imagemagick pngquant jpegoptim ghostscript
 uts image compress my-photo.jpg -q low
 ```
 
-For complete installation instructions and dependency details, see the [Installation Guide](docs/INSTALLATION.md).
+Homebrew, oku, Nix, `go install`, prebuilt binaries and dependency details are in the [Installation Guide](docs/INSTALLATION.md).
 
 ---
 

@@ -1,0 +1,73 @@
+# The manifest `oku add github:y3owk1n/uts` reads, see
+# docs/INSTALLATION.md. Check a change with `oku manifest lint` and
+# `oku manifest test`.
+[package]
+name = "uts"
+description = "One CLI for every format: compress and convert images, video, audio, PDFs and archives"
+homepage = "https://github.com/y3owk1n/uts"
+license = "MIT"
+
+[version]
+from = "github-releases"
+repo = "y3owk1n/uts"
+strip_prefix = "v"
+
+# The binaries are built with cgo off, so one Linux zip serves glibc and musl.
+# Windows has no release zip and no build.
+[[artifact]]
+match = { os = "darwin", arch = "arm64" }
+url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-darwin-arm64.zip"
+sha256_url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-darwin-arm64.zip.sha256"
+bin = ["bin/uts"]
+man = ["share/man/man1/*.1"]
+completions = { generate = "uts completion {{shell}}" }
+
+[[artifact]]
+match = { os = "darwin", arch = "amd64" }
+url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-darwin-amd64.zip"
+sha256_url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-darwin-amd64.zip.sha256"
+bin = ["bin/uts"]
+man = ["share/man/man1/*.1"]
+completions = { generate = "uts completion {{shell}}" }
+
+[[artifact]]
+match = { os = "linux", arch = "arm64" }
+url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-linux-arm64.zip"
+sha256_url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-linux-arm64.zip.sha256"
+bin = ["bin/uts"]
+man = ["share/man/man1/*.1"]
+completions = { generate = "uts completion {{shell}}" }
+
+[[artifact]]
+match = { os = "linux", arch = "amd64" }
+url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-linux-amd64.zip"
+sha256_url = "https://github.com/y3owk1n/uts/releases/download/{{tag}}/uts-linux-amd64.zip.sha256"
+bin = ["bin/uts"]
+man = ["share/man/man1/*.1"]
+completions = { generate = "uts completion {{shell}}" }
+
+# The same build as the justfile's: cgo off, and the tag, commit and date in
+# cmd. go comes from the repo's own manifest, read at the same commit.
+# uts-main.toml repeats this build, so change both.
+[build]
+needs = ["git"]
+deps = [{ ref = "./.oku/go.toml", version = "~1.26" }]
+source = { git = "https://github.com/y3owk1n/uts", tag = "{{tag}}" }
+when = [{ os = "darwin" }, { os = "linux" }]
+
+[[build.step]]
+vendor = "go"
+
+[[build.step]]
+run = """
+set -eu
+pkg=github.com/y3owk1n/uts/cmd
+go build -mod=vendor -trimpath -ldflags="-s -w -X $pkg.Version={{tag}} -X $pkg.GitCommit=$(git rev-parse --short HEAD) -X $pkg.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o uts .
+mkdir -p man
+go run -mod=vendor ./cmd/genman man
+"""
+shell = "sh"
+env = { CGO_ENABLED = "0", GOFLAGS = "-buildvcs=false", GOTOOLCHAIN = "local" }
+
+[[build.step]]
+install = { bin = ["uts"], man = ["man/*.1"], completions = { generate = "./uts completion {{shell}}", name = "uts" } }
