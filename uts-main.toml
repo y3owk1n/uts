@@ -1,0 +1,41 @@
+# The manifest `oku add github:y3owk1n/uts#uts-main` reads, which builds the
+# newest commit of main. It installs the same program as oku.pkg.toml, so a
+# user installs one of the two.
+[package]
+name = "uts"
+description = "One CLI for every format, built from the main branch"
+homepage = "https://github.com/y3owk1n/uts"
+license = "MIT"
+
+# The version is <date>-<commit>, such as 2026.10.09-a73243f, and {{tag}} is
+# the branch.
+[version]
+from = "git-branch"
+repo = "https://github.com/y3owk1n/uts"
+branch = "main"
+
+# This is the build of oku.pkg.toml, except that it stamps the date-commit
+# version, since on a branch {{tag}} is only the branch's name. Change both
+# together.
+[build]
+needs = ["git"]
+deps = [{ ref = "./.oku/go.toml", version = "~1.26" }]
+source = { git = "https://github.com/y3owk1n/uts", tag = "{{tag}}" }
+when = [{ os = "darwin" }, { os = "linux" }]
+
+[[build.step]]
+vendor = "go"
+
+[[build.step]]
+run = """
+set -eu
+pkg=github.com/y3owk1n/uts/cmd
+go build -mod=vendor -trimpath -ldflags="-s -w -X $pkg.Version={{version}} -X $pkg.GitCommit=$(git rev-parse --short HEAD) -X $pkg.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o uts .
+mkdir -p man
+go run -mod=vendor ./cmd/genman man
+"""
+shell = "sh"
+env = { CGO_ENABLED = "0", GOFLAGS = "-buildvcs=false", GOTOOLCHAIN = "local" }
+
+[[build.step]]
+install = { bin = ["uts"], man = ["man/*.1"], completions = { generate = "./uts completion {{shell}}", name = "uts" } }

@@ -13,9 +13,10 @@ This guide covers installation methods for `uts` and explains how to configure i
     - [Nix Installation](#nix-installation)
 - [Installation Methods](#installation-methods)
     - [Method 1: Homebrew (Recommended)](#method-1-homebrew-recommended)
-    - [Method 2: Nix Flake](#method-2-nix-flake)
-    - [Method 3: Go Install](#method-3-go-install)
-    - [Method 4: GitHub Release Binaries](#method-4-github-release-binaries)
+    - [Method 2: oku](#method-2-oku)
+    - [Method 3: Nix Flake](#method-3-nix-flake)
+    - [Method 4: Go Install](#method-4-go-install)
+    - [Method 5: GitHub Release Binaries](#method-5-github-release-binaries)
 - [Shell Completions](#shell-completions)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
@@ -115,7 +116,27 @@ nix-env -iA \
 brew install y3owk1n/tap/uts
 ```
 
-### Method 2: Nix Flake
+### Method 2: oku
+
+[oku](https://github.com/y3owk1n/oku) installs `uts` from the repo's `oku.pkg.toml` on macOS and Linux. It takes the release zip for your machine, checks it against the release's `.sha256` file, and adds man pages and shell completions. It installs stable releases only, and does not install the [system dependencies](#system-dependencies-crucial).
+
+```bash
+oku add -g github:y3owk1n/uts
+```
+
+`-g` adds it to your global list. To keep it in a project's `oku.toml` instead:
+
+```toml
+[packages]
+uts = "github:y3owk1n/uts"
+```
+
+- **From source:** `oku add -g github:y3owk1n/uts --from-source` builds the release tag with Go, which oku installs, and writes `from_source = true` to your list so every update builds too. The build needs `git`.
+- **Latest main:** `oku add -g github:y3owk1n/uts#uts-main` builds the newest commit of `main` instead of a release, and needs the same tools. Its version is the date and commit, such as `2026.10.09-a73243f`, and `oku update uts` takes the newest commit. It installs the same `uts`, so remove the release package first.
+- **Updating:** `oku update uts`.
+- **Uninstalling:** `oku remove -g uts`.
+
+### Method 3: Nix Flake
 
 `uts` is available as a Nix flake with support for installing as a Nix overlay, direct package reference, or declaring it through Home Manager.
 
@@ -198,7 +219,7 @@ Or for standalone NixOS/home-manager configurations:
 
 ---
 
-### Method 3: Go Install
+### Method 4: Go Install
 
 If you have a Go development toolchain set up (Go 1.26+), install directly via Go:
 
@@ -212,7 +233,7 @@ Ensure your Go bin directory (usually `~/go/bin`) is included in your system's `
 export PATH="$HOME/go/bin:$PATH"
 ```
 
-### Method 4: GitHub Release Binaries
+### Method 5: GitHub Release Binaries
 
 1. Navigate to the [Releases page](https://github.com/y3owk1n/uts/releases).
 2. Download the package matching your OS and Architecture:
