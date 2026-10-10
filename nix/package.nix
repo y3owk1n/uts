@@ -140,7 +140,7 @@ else
     postInstall = ''
       # generate man pages
       mkdir -p $out/share/man/man1
-      go run ./cmd/genman $out/share/man/man1
+      go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version=${finalAttrs.version}" ./cmd/genman $out/share/man/man1
 
       # install shell completions
       if ${lib.boolToString (stdenv.buildPlatform.canExecute stdenv.hostPlatform)}; then

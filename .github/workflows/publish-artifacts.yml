@@ -33,7 +33,7 @@ jobs:
               run: just release-ci-darwin arm64 ${{ inputs.version_override }}
 
             - name: Generate man pages
-              run: go run ./cmd/genman build/man
+              run: go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version=${{ inputs.version_override }}" ./cmd/genman build/man
 
             - name: Bundle uts-darwin-arm64
               run: |
@@ -77,7 +77,7 @@ jobs:
               run: just release-ci-darwin amd64 ${{ inputs.version_override }}
 
             - name: Generate man pages
-              run: go run ./cmd/genman build/man
+              run: go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version=${{ inputs.version_override }}" ./cmd/genman build/man
 
             - name: Bundle uts-darwin-amd64
               run: |
@@ -121,7 +121,7 @@ jobs:
               run: just release-ci-linux amd64 ${{ inputs.version_override }}
 
             - name: Generate man pages
-              run: go run ./cmd/genman build/man
+              run: go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version=${{ inputs.version_override }}" ./cmd/genman build/man
 
             - name: Bundle uts-linux-amd64
               run: |
@@ -165,7 +165,7 @@ jobs:
               run: just release-ci-linux arm64 ${{ inputs.version_override }}
 
             - name: Generate man pages
-              run: go run ./cmd/genman build/man
+              run: go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version=${{ inputs.version_override }}" ./cmd/genman build/man
 
             - name: Bundle uts-linux-arm64
               run: |

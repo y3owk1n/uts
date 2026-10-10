@@ -72,7 +72,7 @@ lint:
 genman OUTPUT_DIR="build/man":
     @echo "Generating man pages..."
     @mkdir -p {{ OUTPUT_DIR }}
-    env CGO_ENABLED=0 go run ./cmd/genman {{ OUTPUT_DIR }}
+    env CGO_ENABLED=0 go run -ldflags="-X github.com/y3owk1n/uts/cmd.Version={{ VERSION }}" ./cmd/genman {{ OUTPUT_DIR }}
     @echo "Man pages generated in {{ OUTPUT_DIR }}/"
 
 clean:
